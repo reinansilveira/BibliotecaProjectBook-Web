@@ -1,0 +1,101 @@
+<div class="reports">
+  <section class="surface card">
+    <div class="card-header">
+      <div>
+        <h2>Loans and overdue returns by month</h2>
+        <p>
+          Grouped by due date, from the <code>usp_GetMonthlyOverdueReport</code> stored procedure.
+        </p>
+      </div>
+      <div class="years" role="group" aria-label="Year">
+        @for (option of years; track option) {
+          <button
+            type="button"
+            class="year"
+            [class.selected]="option === year()"
+            [attr.aria-pressed]="option === year()"
+            (click)="year.set(option)"
+          >
+            {{ option }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (overdue(); as current) {
+      @switch (current.status) {
+        @case ('loading') {
+          <span class="skeleton chart-skeleton" aria-label="Loading report"></span>
+        }
+        @case ('error') {
+          <app-empty-state icon="cloud_off" title="We could not load the report">{{
+            current.message
+          }}</app-empty-state>
+        }
+        @case ('loaded') {
+          <dl class="summary">
+            <div>
+              <dt>Loans</dt>
+              <dd>{{ summary().loans | number }}</dd>
+            </div>
+            <div>
+              <dt>Overdue</dt>
+              <dd>{{ summary().overdue | number }}</dd>
+            </div>
+            <div>
+              <dt>Overdue rate</dt>
+              <dd>{{ summary().rate | number: '1.0-1' }}%</dd>
+            </div>
+            <div>
+              <dt>Avg. days late</dt>
+              <dd>{{ summary().averageDaysLate | number: '1.0-1' }}</dd>
+            </div>
+          </dl>
+          <app-monthly-chart [months]="current.value" />
+        }
+      }
+    }
+  </section>
+
+  <section class="surface card">
+    <div class="card-header">
+      <div>
+        <h2>Most borrowed books</h2>
+        <p>Hand-written SQL with a CTE and <code>DENSE_RANK</code>, run with Dapper.</p>
+      </div>
+      <form class="period" (submit)="$event.preventDefault(); applyRanking(from.value, to.value)">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>From</mat-label>
+          <input matInput #from type="date" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>To</mat-label>
+          <input matInput #to type="date" />
+        </mat-form-field>
+        <button mat-flat-button type="submit">Apply</button>
+      </form>
+    </div>
+
+    @if (ranking(); as current) {
+      @switch (current.status) {
+        @case ('loading') {
+          <span class="skeleton list-skeleton" aria-label="Loading ranking"></span>
+        }
+        @case ('error') {
+          <app-empty-state icon="cloud_off" title="We could not load the ranking">{{
+            current.message
+          }}</app-empty-state>
+        }
+        @case ('loaded') {
+          @if (current.value.length === 0) {
+            <app-empty-state icon="leaderboard" title="No loans in this period"
+              >Try another period.</app-empty-state
+            >
+          } @else {
+            <app-ranking-list [items]="current.value" />
+          }
+        }
+      }
+    }
+  </section>
+</div>

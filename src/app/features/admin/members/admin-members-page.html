@@ -1,0 +1,87 @@
+<div class="toolbar-row">
+  <form class="search-field" role="search" (submit)="$event.preventDefault(); search(term.value)">
+    <mat-icon>search</mat-icon>
+    <input #term type="search" placeholder="Search by name or email" aria-label="Search members" />
+  </form>
+</div>
+
+@if (state(); as current) {
+  @switch (current.status) {
+    @case ('loading') {
+      <div class="surface table-skeleton" aria-busy="true" aria-label="Loading members">
+        @for (row of skeletonRows; track row) {
+          <span class="skeleton row-skeleton"></span>
+        }
+      </div>
+    }
+    @case ('error') {
+      <app-empty-state icon="cloud_off" title="We could not load the members">{{
+        current.message
+      }}</app-empty-state>
+    }
+    @case ('loaded') {
+      @if (current.value.items.length === 0) {
+        <app-empty-state icon="person_search" title="No members found"
+          >Try another name or email.</app-empty-state
+        >
+      } @else {
+        <div class="surface table-wrapper">
+          <table mat-table class="data-table" [dataSource]="current.value.items">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Member</th>
+              <td mat-cell *matCellDef="let member">
+                <span class="cell-with-media">
+                  <span class="avatar">{{ initialsOf(member.name) }}</span>
+                  <span class="cell-stack">
+                    <strong>{{ member.name }}</strong>
+                    <small>{{ member.email }}</small>
+                  </span>
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="role">
+              <th mat-header-cell *matHeaderCellDef>Role</th>
+              <td mat-cell *matCellDef="let member">
+                <span class="badge" [class.primary]="member.role === 'Admin'">{{
+                  member.role
+                }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef class="hide-mobile">Member since</th>
+              <td mat-cell *matCellDef="let member" class="hide-mobile">
+                {{ member.createdAt | date: 'mediumDate' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>
+                <span class="cdk-visually-hidden">Actions</span>
+              </th>
+              <td mat-cell *matCellDef="let member" class="actions-cell">
+                <button mat-stroked-button (click)="openLoans(member)">
+                  <mat-icon>bookmarks</mat-icon>
+                  Loans
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="columns"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns"></tr>
+          </table>
+
+          <mat-paginator
+            [length]="current.value.totalItems"
+            [pageIndex]="current.value.page - 1"
+            [pageSize]="pageSize"
+            [hidePageSize]="true"
+            (page)="changePage($event)"
+            aria-label="Member pages"
+          />
+        </div>
+      }
+    }
+  }
+}

@@ -1,0 +1,122 @@
+@if (state(); as current) {
+  @switch (current.status) {
+    @case ('loading') {
+      <section class="page">
+        <div class="detail" aria-busy="true" aria-label="Loading book">
+          <span class="skeleton cover-skeleton"></span>
+          <div class="info">
+            <span class="skeleton line title-line"></span>
+            <span class="skeleton line"></span>
+            <span class="skeleton block"></span>
+          </div>
+        </div>
+      </section>
+    }
+    @case ('error') {
+      <section class="page">
+        <app-empty-state icon="menu_book" title="Book unavailable">
+          {{ current.message }}
+          <a mat-stroked-button routerLink="/books">Back to the catalog</a>
+        </app-empty-state>
+      </section>
+    }
+    @case ('loaded') {
+      <section class="hero">
+        <div class="backdrop" aria-hidden="true">
+          <app-book-cover
+            [title]="current.value.title"
+            [author]="current.value.author"
+            display="large"
+          />
+        </div>
+
+        <div class="page hero-page">
+          <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a routerLink="/books">Discover</a>
+            <mat-icon>chevron_right</mat-icon>
+            <span aria-current="page">{{ current.value.title }}</span>
+          </nav>
+
+          <article class="detail">
+            <div class="cover">
+              <app-book-cover
+                [title]="current.value.title"
+                [author]="current.value.author"
+                display="large"
+              />
+            </div>
+
+            <div class="info">
+              <h1>{{ current.value.title }}</h1>
+              <p class="author">
+                by
+                <a routerLink="/books" [queryParams]="{ search: current.value.author }">{{
+                  current.value.author
+                }}</a>
+              </p>
+
+              <div class="loan-card">
+                <ul class="facts">
+                  <li>
+                    <mat-icon>event_available</mat-icon>
+                    <span><strong>7 days</strong> loan period</span>
+                  </li>
+                  <li>
+                    <mat-icon>bookmark_added</mat-icon>
+                    <span><strong>1 book</strong> at a time</span>
+                  </li>
+                  <li>
+                    <mat-icon>volunteer_activism</mat-icon>
+                    <span><strong>Free</strong> for members</span>
+                  </li>
+                </ul>
+
+                @if (auth.isAuthenticated()) {
+                  <button
+                    mat-flat-button
+                    class="borrow"
+                    [disabled]="borrowing()"
+                    (click)="borrow()"
+                  >
+                    <mat-icon>library_add</mat-icon>
+                    Borrow this book
+                  </button>
+                } @else {
+                  <a
+                    mat-flat-button
+                    class="borrow"
+                    routerLink="/login"
+                    [queryParams]="{ returnUrl: returnUrl() }"
+                  >
+                    <mat-icon>login</mat-icon>
+                    Sign in to borrow
+                  </a>
+                }
+              </div>
+
+              <h2 class="section-title">About this book</h2>
+              <p class="description">
+                {{ current.value.description || 'No description available yet.' }}
+              </p>
+              <p class="added">
+                <mat-icon>schedule</mat-icon>
+                Added to the catalog on {{ current.value.createdAt | date: 'longDate' }}
+              </p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      @if (moreByAuthor().length > 0) {
+        <section class="page more">
+          <h2 class="section-title">More by {{ current.value.author }}</h2>
+          <div class="shelf">
+            @for (book of moreByAuthor(); track book.id) {
+              <app-book-card [book]="book" />
+            }
+          </div>
+        </section>
+      }
+    }
+  }
+}

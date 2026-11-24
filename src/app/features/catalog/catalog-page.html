@@ -1,0 +1,116 @@
+@if (query().search; as search) {
+  <section class="results-header">
+    <div class="results-content">
+      <span class="eyebrow">Search</span>
+      <h1 class="page-title">Results for “{{ search }}”</h1>
+      <a class="clear" routerLink="/books">
+        <mat-icon>close</mat-icon>
+        Clear search
+      </a>
+    </div>
+  </section>
+} @else {
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-copy">
+        <span class="eyebrow">The reading room</span>
+        <h1>Find your next great read</h1>
+        <p>
+          Browse the catalog, borrow any book for seven days and keep track of everything you are
+          reading, all in one place.
+        </p>
+        <div class="hero-actions">
+          <a mat-flat-button href="#catalog" (click)="scrollToCatalog($event)">
+            <mat-icon>explore</mat-icon>
+            Browse the catalog
+          </a>
+          @if (!auth.isAuthenticated()) {
+            <a mat-stroked-button routerLink="/register">Join for free</a>
+          }
+        </div>
+        <dl class="stats">
+          <div>
+            <dt>Books</dt>
+            <dd>{{ totalBooks() ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>Loan period</dt>
+            <dd>7 days</dd>
+          </div>
+          <div>
+            <dt>Price</dt>
+            <dd>Free</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="hero-shelf" aria-hidden="true">
+        @for (item of featured(); track item.book.id) {
+          <div class="fan-item" [style.--offset]="item.offset" [style.--distance]="item.distance">
+            <app-book-cover [title]="item.book.title" [author]="item.book.author" />
+          </div>
+        } @empty {
+          @for (item of fanPlaceholders; track item.offset) {
+            <div class="fan-item" [style.--offset]="item.offset" [style.--distance]="item.distance">
+              <span class="skeleton fan-skeleton"></span>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </section>
+}
+
+<section class="page" id="catalog">
+  @if (state(); as current) {
+    @switch (current.status) {
+      @case ('loading') {
+        <div class="section-header">
+          <span class="skeleton heading-skeleton"></span>
+        </div>
+        <div class="grid" aria-busy="true" aria-label="Loading books">
+          @for (placeholder of skeletons; track placeholder) {
+            <div class="card-skeleton">
+              <span class="skeleton cover-skeleton"></span>
+              <span class="skeleton line"></span>
+              <span class="skeleton line short"></span>
+            </div>
+          }
+        </div>
+      }
+      @case ('error') {
+        <app-empty-state icon="cloud_off" title="We could not load the catalog">
+          {{ current.message }}
+        </app-empty-state>
+      }
+      @case ('loaded') {
+        @if (current.value.items.length === 0) {
+          <app-empty-state icon="search_off" title="No books found">
+            Try another title or author.
+            <a mat-stroked-button routerLink="/books">See all books</a>
+          </app-empty-state>
+        } @else {
+          <div class="section-header">
+            <h2 class="section-title">{{ query().search ? 'Matching books' : 'All books' }}</h2>
+            <span class="count">{{ current.value.totalItems }} books</span>
+          </div>
+          <div class="grid">
+            @for (book of current.value.items; track book.id) {
+              <app-book-card [book]="book" />
+            }
+          </div>
+          @if (current.value.totalPages > 1) {
+            <mat-paginator
+              [length]="current.value.totalItems"
+              [pageIndex]="current.value.page - 1"
+              [pageSize]="pageSize"
+              [hidePageSize]="true"
+              (page)="changePage($event)"
+              aria-label="Catalog pages"
+            />
+          }
+        }
+      }
+    }
+  }
+</section>

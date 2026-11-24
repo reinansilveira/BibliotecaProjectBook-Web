@@ -1,0 +1,28 @@
+.narrow {
+  max-width: 640px;
+}
+
+.card {
+  padding: 32px;
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  font: var(--mat-sys-label-large);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}

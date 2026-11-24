@@ -1,0 +1,139 @@
+<header class="header">
+  <div class="bar">
+    <a class="brand" routerLink="/books" aria-label="Library home">
+      <span class="brand-mark"><mat-icon>auto_stories</mat-icon></span>
+      <span class="brand-name">Library</span>
+    </a>
+
+    <nav class="primary-nav" aria-label="Main">
+      <a routerLink="/books" routerLinkActive="active">Discover</a>
+      @if (auth.session()) {
+        <a routerLink="/my-loans" routerLinkActive="active">My loans</a>
+      }
+      @if (auth.isAdmin()) {
+        <a routerLink="/admin" routerLinkActive="active">Admin</a>
+      }
+    </nav>
+
+    <form class="search" role="search" (submit)="search($event, searchInput.value)">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        #searchInput
+        class="search-input"
+        name="search"
+        type="search"
+        placeholder="Search by title or author"
+        aria-label="Search books by title or author"
+      />
+    </form>
+
+    <div class="actions">
+      <button
+        mat-icon-button
+        type="button"
+        (click)="theme.toggle()"
+        [attr.aria-label]="theme.mode() === 'dark' ? 'Use light theme' : 'Use dark theme'"
+      >
+        <mat-icon>{{ theme.mode() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+
+      @if (auth.session(); as session) {
+        <button
+          type="button"
+          class="account-button"
+          [matMenuTriggerFor]="accountMenu"
+          aria-label="Account menu"
+        >
+          <span class="avatar">{{ initials() }}</span>
+          <span class="account-name">{{ firstName() }}</span>
+          <mat-icon class="chevron">expand_more</mat-icon>
+        </button>
+
+        <mat-menu #accountMenu="matMenu" xPosition="before">
+          <div class="menu-header">
+            <span class="avatar large">{{ initials() }}</span>
+            <span class="menu-identity">
+              <strong>{{ session.name }}</strong>
+              <span>{{ session.role }}</span>
+            </span>
+          </div>
+          <mat-divider />
+          <a mat-menu-item routerLink="/profile">
+            <mat-icon>person</mat-icon>
+            Profile
+          </a>
+          <a mat-menu-item routerLink="/my-loans">
+            <mat-icon>bookmarks</mat-icon>
+            My loans
+          </a>
+          @if (auth.isAdmin()) {
+            <a mat-menu-item routerLink="/admin">
+              <mat-icon>space_dashboard</mat-icon>
+              Administration
+            </a>
+          }
+          <mat-divider />
+          <button mat-menu-item (click)="auth.logout()">
+            <mat-icon>logout</mat-icon>
+            Sign out
+          </button>
+        </mat-menu>
+      } @else {
+        <a mat-button class="sign-in" routerLink="/login">Sign in</a>
+        <a mat-flat-button class="sign-up" routerLink="/register">Create account</a>
+      }
+    </div>
+  </div>
+</header>
+
+<main>
+  <router-outlet />
+</main>
+
+<footer class="footer">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <span class="brand-mark small"><mat-icon>auto_stories</mat-icon></span>
+      <span>
+        <strong>Library</strong>
+        <small>Borrow a book for 7 days, free of charge.</small>
+      </span>
+    </div>
+    <p class="footer-meta">
+      Built with Angular 22, Angular Material 3 and ASP.NET Core. Covers from
+      <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a>.
+    </p>
+  </div>
+</footer>
+
+<nav class="bottom-nav" aria-label="Mobile">
+  <a routerLink="/books" routerLinkActive="active">
+    <mat-icon>explore</mat-icon>
+    <span>Discover</span>
+  </a>
+  @if (auth.session()) {
+    <a routerLink="/my-loans" routerLinkActive="active">
+      <mat-icon>bookmarks</mat-icon>
+      <span>Loans</span>
+    </a>
+    @if (auth.isAdmin()) {
+      <a routerLink="/admin" routerLinkActive="active">
+        <mat-icon>space_dashboard</mat-icon>
+        <span>Admin</span>
+      </a>
+    }
+    <a routerLink="/profile" routerLinkActive="active">
+      <mat-icon>person</mat-icon>
+      <span>Profile</span>
+    </a>
+  } @else {
+    <a routerLink="/login" routerLinkActive="active">
+      <mat-icon>login</mat-icon>
+      <span>Sign in</span>
+    </a>
+    <a routerLink="/register" routerLinkActive="active">
+      <mat-icon>person_add</mat-icon>
+      <span>Join</span>
+    </a>
+  }
+</nav>

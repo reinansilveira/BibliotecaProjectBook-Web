@@ -1,0 +1,250 @@
+.hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--mat-sys-surface);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.backdrop {
+  position: absolute;
+  inset: -80px;
+  opacity: 0.32;
+  filter: blur(60px) saturate(140%);
+  pointer-events: none;
+
+  app-book-cover {
+    width: 100%;
+    height: 100%;
+  }
+
+  ::ng-deep .cover {
+    aspect-ratio: auto;
+    height: 100%;
+  }
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 30%,
+    color-mix(in srgb, var(--mat-sys-surface) 85%, transparent)
+  );
+  pointer-events: none;
+}
+
+.hero-page {
+  position: relative;
+  z-index: 1;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 32px;
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface-variant);
+
+  a {
+    text-decoration: none;
+
+    &:hover {
+      color: var(--mat-sys-primary);
+    }
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  span {
+    color: var(--mat-sys-on-surface);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: minmax(200px, 300px) minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+}
+
+.cover {
+  position: sticky;
+  top: 100px;
+}
+
+.info h1 {
+  font-family: var(--app-serif);
+  font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.author {
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 12px 0 28px;
+
+  a {
+    color: var(--mat-sys-primary);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.loan-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px 32px;
+  padding: 20px 24px;
+  margin-bottom: 40px;
+  border-radius: var(--app-radius);
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: color-mix(in srgb, var(--mat-sys-surface) 88%, transparent);
+  box-shadow: var(--app-shadow);
+}
+
+.facts {
+  flex: 1 1 320px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font: var(--mat-sys-body-medium);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  mat-icon {
+    color: var(--mat-sys-primary);
+  }
+
+  strong {
+    color: var(--mat-sys-on-surface);
+  }
+}
+
+.borrow {
+  height: 52px;
+  padding: 0 28px;
+  font-size: 1rem;
+}
+
+.description {
+  font-size: 1.125rem;
+  line-height: 1.75;
+  white-space: pre-line;
+  max-width: 65ch;
+  margin: 12px 0 24px;
+}
+
+.added {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.more .section-title {
+  margin-bottom: 24px;
+}
+
+.shelf {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 160px;
+  gap: 28px;
+  overflow-x: auto;
+  padding: 8px 4px 16px;
+  scroll-snap-type: x mandatory;
+
+  app-book-card {
+    scroll-snap-align: start;
+  }
+}
+
+.cover-skeleton {
+  aspect-ratio: 2 / 3;
+  border-radius: 4px 10px 10px 4px;
+}
+
+.line {
+  height: 18px;
+  width: 40%;
+  margin-bottom: 16px;
+}
+
+.title-line {
+  height: 48px;
+  width: 70%;
+}
+
+.block {
+  height: 120px;
+  border-radius: var(--app-radius);
+}
+
+@media (max-width: 760px) {
+  .detail {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .cover {
+    position: static;
+    width: 58%;
+    max-width: 220px;
+    margin: 0 auto;
+  }
+
+  .info h1 {
+    text-align: center;
+  }
+
+  .author {
+    text-align: center;
+  }
+
+  .borrow {
+    width: 100%;
+  }
+
+  .breadcrumb {
+    margin-bottom: 20px;
+  }
+
+  .shelf {
+    grid-auto-columns: 128px;
+    gap: 16px;
+  }
+}
