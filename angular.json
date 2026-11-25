@@ -98,6 +98,9 @@
               "text-summary",
               "html",
               "lcovonly"
+            ],
+            "setupFiles": [
+              "src/testing/setup.ts"
             ]
           }
         },
