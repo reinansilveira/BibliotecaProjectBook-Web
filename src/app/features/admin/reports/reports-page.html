@@ -2,12 +2,24 @@
   <section class="surface card">
     <div class="card-header">
       <div>
-        <h2>Loans and overdue returns by month</h2>
+        <h2>{{ 'Loans and overdue returns by month' | t }}</h2>
         <p>
-          Grouped by due date, from the <code>usp_GetMonthlyOverdueReport</code> stored procedure.
+          {{ 'Grouped by due date, from the' | t }}
+          <code>usp_GetMonthlyOverdueReport</code>
+          {{ 'stored procedure.' | t }}
         </p>
       </div>
-      <div class="years" role="group" aria-label="Year">
+      <button
+        mat-stroked-button
+        type="button"
+        class="csv"
+        [disabled]="exporting() === 'overdue-by-month'"
+        (click)="exportOverdue()"
+      >
+        <mat-icon>download</mat-icon>
+        CSV
+      </button>
+      <div class="years" role="group" [attr.aria-label]="'Year' | t">
         @for (option of years; track option) {
           <button
             type="button"
@@ -25,30 +37,30 @@
     @if (overdue(); as current) {
       @switch (current.status) {
         @case ('loading') {
-          <span class="skeleton chart-skeleton" aria-label="Loading report"></span>
+          <span class="skeleton chart-skeleton" [attr.aria-label]="'Loading report' | t"></span>
         }
         @case ('error') {
-          <app-empty-state icon="cloud_off" title="We could not load the report">{{
-            current.message
+          <app-empty-state icon="cloud_off" [title]="'We could not load the report' | t">{{
+            current.message | t
           }}</app-empty-state>
         }
         @case ('loaded') {
           <dl class="summary">
             <div>
-              <dt>Loans</dt>
-              <dd>{{ summary().loans | number }}</dd>
+              <dt>{{ 'Loans' | t }}</dt>
+              <dd>{{ summary().loans | localNumber }}</dd>
             </div>
             <div>
-              <dt>Overdue</dt>
-              <dd>{{ summary().overdue | number }}</dd>
+              <dt>{{ 'Overdue' | t }}</dt>
+              <dd>{{ summary().overdue | localNumber }}</dd>
             </div>
             <div>
-              <dt>Overdue rate</dt>
-              <dd>{{ summary().rate | number: '1.0-1' }}%</dd>
+              <dt>{{ 'Overdue rate' | t }}</dt>
+              <dd>{{ summary().rate | localNumber: '1.0-1' }}%</dd>
             </div>
             <div>
-              <dt>Avg. days late</dt>
-              <dd>{{ summary().averageDaysLate | number: '1.0-1' }}</dd>
+              <dt>{{ 'Avg. days late' | t }}</dt>
+              <dd>{{ summary().averageDaysLate | localNumber: '1.0-1' }}</dd>
             </div>
           </dl>
           <app-monthly-chart [months]="current.value" />
@@ -60,42 +72,79 @@
   <section class="surface card">
     <div class="card-header">
       <div>
-        <h2>Most borrowed books</h2>
-        <p>Hand-written SQL with a CTE and <code>DENSE_RANK</code>, run with Dapper.</p>
+        <h2>{{ 'Most borrowed books' | t }}</h2>
+        <p>
+          {{ 'Hand-written SQL with a CTE and' | t }} <code>DENSE_RANK</code>,
+          {{ 'run with Dapper.' | t }}
+        </p>
       </div>
       <form class="period" (submit)="$event.preventDefault(); applyRanking(from.value, to.value)">
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>From</mat-label>
+          <mat-label>{{ 'From' | t }}</mat-label>
           <input matInput #from type="date" />
         </mat-form-field>
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>To</mat-label>
+          <mat-label>{{ 'To' | t }}</mat-label>
           <input matInput #to type="date" />
         </mat-form-field>
-        <button mat-flat-button type="submit">Apply</button>
+        <button mat-flat-button type="submit">{{ 'Apply' | t }}</button>
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="exporting() === 'most-borrowed-books'"
+          (click)="exportRanking()"
+        >
+          <mat-icon>download</mat-icon>
+          CSV
+        </button>
       </form>
     </div>
 
     @if (ranking(); as current) {
       @switch (current.status) {
         @case ('loading') {
-          <span class="skeleton list-skeleton" aria-label="Loading ranking"></span>
+          <span class="skeleton list-skeleton" [attr.aria-label]="'Loading ranking' | t"></span>
         }
         @case ('error') {
-          <app-empty-state icon="cloud_off" title="We could not load the ranking">{{
-            current.message
+          <app-empty-state icon="cloud_off" [title]="'We could not load the ranking' | t">{{
+            current.message | t
           }}</app-empty-state>
         }
         @case ('loaded') {
           @if (current.value.length === 0) {
-            <app-empty-state icon="leaderboard" title="No loans in this period"
-              >Try another period.</app-empty-state
-            >
+            <app-empty-state icon="leaderboard" [title]="'No loans in this period' | t">{{
+              'Try another period.' | t
+            }}</app-empty-state>
           } @else {
             <app-ranking-list [items]="current.value" />
           }
         }
       }
     }
+  </section>
+  <section class="surface card">
+    <div class="card-header">
+      <div>
+        <h2>{{ 'Loan history' | t }}</h2>
+        <p>{{ 'Every loan in the period, ready for a spreadsheet.' | t }}</p>
+      </div>
+      <form
+        class="period"
+        (submit)="$event.preventDefault(); exportLoans(loansFrom.value, loansTo.value)"
+      >
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'From' | t }}</mat-label>
+          <input matInput #loansFrom type="date" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'To' | t }}</mat-label>
+          <input matInput #loansTo type="date" />
+        </mat-form-field>
+        <button mat-flat-button type="submit" [disabled]="exporting() === 'loans'">
+          <mat-icon>download</mat-icon>
+          {{ 'Download CSV' | t }}
+        </button>
+      </form>
+    </div>
   </section>
 </div>

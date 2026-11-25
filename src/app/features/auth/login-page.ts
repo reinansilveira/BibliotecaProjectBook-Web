@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { TranslatePipe } from '../../core/i18n/pipes';
 import { Notifier } from '../../core/notifications/notifier';
 import { AuthShowcase } from './auth-showcase';
 
@@ -19,6 +20,7 @@ import { AuthShowcase } from './auth-showcase';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    TranslatePipe,
   ],
   templateUrl: './login-page.html',
   styleUrl: './auth-card.scss',

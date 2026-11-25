@@ -1,5 +1,6 @@
 import { Component, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { TranslatePipe } from '../../core/i18n/pipes';
 import { BookCover } from '../../shared/book-cover';
 
 interface ShowcaseBook {
@@ -9,7 +10,7 @@ interface ShowcaseBook {
 
 @Component({
   selector: 'app-auth-showcase',
-  imports: [BookCover, MatIconModule],
+  imports: [BookCover, MatIconModule, TranslatePipe],
   template: `
     <aside class="showcase">
       <div class="covers" aria-hidden="true">
@@ -19,11 +20,13 @@ interface ShowcaseBook {
       </div>
       <div class="copy">
         <span class="mark"><mat-icon>auto_stories</mat-icon></span>
-        <h2>{{ headline() }}</h2>
+        <h2>{{ headline() | t }}</h2>
         <ul>
-          <li><mat-icon>check_circle</mat-icon>Borrow any book for seven days</li>
-          <li><mat-icon>check_circle</mat-icon>Follow due dates in one place</li>
-          <li><mat-icon>check_circle</mat-icon>Free for every member</li>
+          <li>
+            <mat-icon>check_circle</mat-icon>{{ 'Borrow printed books or read e-books online' | t }}
+          </li>
+          <li><mat-icon>check_circle</mat-icon>{{ 'Follow due dates in one place' | t }}</li>
+          <li><mat-icon>check_circle</mat-icon>{{ 'Free for every member' | t }}</li>
         </ul>
       </div>
     </aside>

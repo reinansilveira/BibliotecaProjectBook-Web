@@ -5,6 +5,7 @@ export type LoanTone = 'ok' | 'soon' | 'late' | 'done';
 export interface LoanProgress {
   percent: number;
   label: string;
+  count: number;
   tone: LoanTone;
 }
 
@@ -16,13 +17,9 @@ function calendarDay(time: number): number {
   return Math.round(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_IN_MS);
 }
 
-export function days(count: number): string {
-  return `${count} ${count === 1 ? 'day' : 'days'}`;
-}
-
 export function loanProgress(loan: Loan, now: number = Date.now()): LoanProgress {
-  if (loan.status === 'Returned') {
-    return { percent: 100, label: 'Returned', tone: 'done' };
+  if (loan.status === 'Returned' || loan.status === 'Expired') {
+    return { percent: 100, label: loan.status, count: 0, tone: 'done' };
   }
 
   const start = Date.parse(loan.loanDate);
@@ -31,12 +28,20 @@ export function loanProgress(loan: Loan, now: number = Date.now()): LoanProgress
   const percent = Math.min(100, Math.max(0, ((now - start) / Math.max(due - start, 1)) * 100));
 
   if (loan.status === 'Overdue' || daysLeft < 0) {
-    return { percent: 100, label: `${days(Math.max(1, -daysLeft))} overdue`, tone: 'late' };
+    const late = Math.max(1, -daysLeft);
+    const label = late === 1 ? '{count} day overdue' : '{count} days overdue';
+
+    return { percent: 100, label, count: late, tone: 'late' };
   }
 
   if (daysLeft === 0) {
-    return { percent, label: 'Due today', tone: 'soon' };
+    return { percent, label: 'Due today', count: 0, tone: 'soon' };
   }
 
-  return { percent, label: `${days(daysLeft)} left`, tone: daysLeft <= 2 ? 'soon' : 'ok' };
+  return {
+    percent,
+    label: daysLeft === 1 ? '{count} day left' : '{count} days left',
+    count: daysLeft,
+    tone: daysLeft <= 2 ? 'soon' : 'ok',
+  };
 }

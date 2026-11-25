@@ -34,6 +34,15 @@
             ],
             "styles": [
               "src/styles.scss"
+            ],
+            "allowedCommonJsDependencies": [
+              "event-emitter",
+              "@xmldom/xmldom",
+              "path-webpack",
+              "jszip",
+              "localforage",
+              "marks-pane",
+              "lodash"
             ]
           },
           "configurations": {

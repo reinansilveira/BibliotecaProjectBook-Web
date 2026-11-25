@@ -1,0 +1,163 @@
+@if (state(); as current) {
+  @switch (current.status) {
+    @case ('loading') {
+      <div class="stats" aria-busy="true" [attr.aria-label]="'Loading loans' | t">
+        @for (placeholder of [1, 2, 3]; track placeholder) {
+          <span class="skeleton stat-skeleton"></span>
+        }
+      </div>
+      <span class="skeleton loan-skeleton"></span>
+    }
+    @case ('error') {
+      <app-empty-state icon="cloud_off" [title]="'We could not load your loans' | t">
+        {{ current.message | t }}
+      </app-empty-state>
+    }
+    @case ('loaded') {
+      @if (current.value.all.length === 0) {
+        <app-empty-state icon="bookmarks" [title]="'No loans yet' | t">
+          {{ 'Find a book you like and borrow it in print or as an e-book.' | t }}
+          <a mat-flat-button routerLink="/books">{{ 'Browse the catalog' | t }}</a>
+        </app-empty-state>
+      } @else {
+        <dl class="stats">
+          <div class="stat">
+            <mat-icon>menu_book</mat-icon>
+            <dt>{{ 'Reading now' | t }}</dt>
+            <dd>{{ current.value.reading.length }}</dd>
+          </div>
+          <div class="stat" [class.alert]="current.value.overdue > 0">
+            <mat-icon>warning</mat-icon>
+            <dt>{{ 'Overdue' | t }}</dt>
+            <dd>{{ current.value.overdue }}</dd>
+          </div>
+          <div class="stat">
+            <mat-icon>task_alt</mat-icon>
+            <dt>{{ 'Finished' | t }}</dt>
+            <dd>{{ current.value.history.length }}</dd>
+          </div>
+        </dl>
+
+        <h2 class="section-title">{{ 'Reading now' | t }}</h2>
+        @for (loan of current.value.reading; track loan.id) {
+          <article class="loan surface" [attr.aria-label]="loan.bookTitle">
+            <a class="loan-cover" [routerLink]="['/books', loan.bookId]" tabindex="-1">
+              <app-book-cover
+                [title]="loan.bookTitle"
+                [author]="loan.bookAuthor"
+                [coverUrl]="loan.coverUrl"
+                display="thumb"
+              />
+            </a>
+            <div class="loan-body">
+              <div class="loan-heading">
+                <a class="loan-title" [routerLink]="['/books', loan.bookId]">{{
+                  loan.bookTitle
+                }}</a>
+                <span class="chips">
+                  <span class="badge" [class.primary]="loan.format === 'Ebook'">
+                    <mat-icon>{{ loan.format === 'Ebook' ? 'tablet_mac' : 'menu_book' }}</mat-icon>
+                    {{ (loan.format === 'Ebook' ? 'E-book' : 'Print') | t }}
+                  </span>
+                  <app-loan-status-chip [status]="loan.status" />
+                </span>
+              </div>
+              <span class="loan-author">{{ loan.bookAuthor }}</span>
+              <div class="progress" [class]="'progress ' + loan.progress.tone">
+                <div class="progress-labels">
+                  <span>{{ loan.progress.label | t: { count: loan.progress.count } }}</span>
+                  <span>{{ 'Due {date}' | t: { date: loan.dueDate | localDate } }}</span>
+                </div>
+                <div
+                  class="track"
+                  role="progressbar"
+                  [attr.aria-valuenow]="loan.progress.percent | localNumber: '1.0-0'"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  [attr.aria-label]="'Loan period used for {title}' | t: { title: loan.bookTitle }"
+                >
+                  <span class="fill" [style.width.%]="loan.progress.percent"></span>
+                </div>
+              </div>
+              @if (loan.format === 'Ebook') {
+                <span class="loan-meta">
+                  {{
+                    'Read {percent}%'
+                      | t: { percent: (loan.readingProgress | localNumber: '1.0-0') }
+                  }}
+                </span>
+              }
+              <div class="loan-actions">
+                @if (loan.format === 'Ebook') {
+                  <a mat-flat-button [routerLink]="['/read', loan.id]">
+                    <mat-icon>chrome_reader_mode</mat-icon>
+                    {{ (loan.readingProgress > 0 ? 'Continue reading' : 'Start reading') | t }}
+                  </a>
+                  <button
+                    mat-button
+                    type="button"
+                    [disabled]="busy() === loan.id"
+                    (click)="returnEbook(loan)"
+                  >
+                    {{ 'Return early' | t }}
+                  </button>
+                }
+                @if (canRenew(loan)) {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [disabled]="busy() === loan.id"
+                    (click)="renew(loan)"
+                  >
+                    <mat-icon>autorenew</mat-icon>
+                    {{ 'Renew for 7 more days' | t }}
+                  </button>
+                }
+                <span class="loan-meta">{{
+                  'Borrowed {date}' | t: { date: loan.loanDate | localDate }
+                }}</span>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <div class="nothing surface">
+            <mat-icon>auto_stories</mat-icon>
+            <span>{{ 'You are not reading anything right now.' | t }}</span>
+            <a mat-button routerLink="/books">{{ 'Find a book' | t }}</a>
+          </div>
+        }
+
+        @if (current.value.history.length > 0) {
+          <h2 class="section-title history-title">{{ 'History' | t }}</h2>
+          <ul class="history surface">
+            @for (loan of current.value.history; track loan.id) {
+              <li>
+                <article class="history-item" [attr.aria-label]="loan.bookTitle">
+                  <span class="thumb">
+                    <app-book-cover
+                      [title]="loan.bookTitle"
+                      [author]="loan.bookAuthor"
+                      [coverUrl]="loan.coverUrl"
+                      display="thumb"
+                    />
+                  </span>
+                  <span class="cell-stack">
+                    <a class="loan-title small" [routerLink]="['/books', loan.bookId]">{{
+                      loan.bookTitle
+                    }}</a>
+                    <small>{{ loan.bookAuthor }}</small>
+                  </span>
+                  <span class="history-dates">
+                    {{ loan.loanDate | localDate }} →
+                    {{ loan.returnedAt ?? loan.dueDate | localDate }}
+                  </span>
+                  <app-loan-status-chip [status]="loan.status" />
+                </article>
+              </li>
+            }
+          </ul>
+        }
+      }
+    }
+  }
+}

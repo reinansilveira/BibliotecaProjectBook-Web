@@ -1,43 +1,53 @@
 <div class="toolbar-row">
   <form class="search-field" role="search" (submit)="$event.preventDefault(); search(term.value)">
     <mat-icon>search</mat-icon>
-    <input #term type="search" placeholder="Search books" aria-label="Search books" />
+    <input
+      #term
+      type="search"
+      [placeholder]="'Search books' | t"
+      [attr.aria-label]="'Search books' | t"
+    />
   </form>
   <span class="spacer"></span>
   <button mat-flat-button (click)="create()">
     <mat-icon>add</mat-icon>
-    Add book
+    {{ 'Add book' | t }}
   </button>
 </div>
 
 @if (state(); as current) {
   @switch (current.status) {
     @case ('loading') {
-      <div class="surface table-skeleton" aria-busy="true" aria-label="Loading books">
+      <div class="surface table-skeleton" aria-busy="true" [attr.aria-label]="'Loading books' | t">
         @for (row of skeletonRows; track row) {
           <span class="skeleton row-skeleton"></span>
         }
       </div>
     }
     @case ('error') {
-      <app-empty-state icon="cloud_off" title="We could not load the books">{{
-        current.message
+      <app-empty-state icon="cloud_off" [title]="'We could not load the books' | t">{{
+        current.message | t
       }}</app-empty-state>
     }
     @case ('loaded') {
       @if (current.value.items.length === 0) {
-        <app-empty-state icon="search_off" title="No books found"
-          >Try another title or add a new book.</app-empty-state
-        >
+        <app-empty-state icon="search_off" [title]="'No books found' | t">{{
+          'Try another title or add a new book.' | t
+        }}</app-empty-state>
       } @else {
         <div class="surface table-wrapper">
           <table mat-table class="data-table" [dataSource]="current.value.items">
             <ng-container matColumnDef="book">
-              <th mat-header-cell *matHeaderCellDef>Book</th>
+              <th mat-header-cell *matHeaderCellDef>{{ 'Book' | t }}</th>
               <td mat-cell *matCellDef="let book">
                 <span class="cell-with-media">
                   <span class="thumb">
-                    <app-book-cover [title]="book.title" [author]="book.author" display="thumb" />
+                    <app-book-cover
+                      [title]="book.title"
+                      [author]="book.author"
+                      [coverUrl]="book.coverUrl"
+                      display="thumb"
+                    />
                   </span>
                   <span class="cell-stack">
                     <strong>{{ book.title }}</strong>
@@ -47,30 +57,62 @@
               </td>
             </ng-container>
 
-            <ng-container matColumnDef="createdAt">
-              <th mat-header-cell *matHeaderCellDef class="hide-mobile">Added</th>
+            <ng-container matColumnDef="genre">
+              <th mat-header-cell *matHeaderCellDef class="hide-mobile">{{ 'Genre' | t }}</th>
               <td mat-cell *matCellDef="let book" class="hide-mobile">
-                {{ book.createdAt | date: 'mediumDate' }}
+                <span class="badge">{{ book.genre | t }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="copies">
+              <th mat-header-cell *matHeaderCellDef>{{ 'Copies' | t }}</th>
+              <td mat-cell *matCellDef="let book">
+                <span class="cell-stack">
+                  <strong>{{ book.availableCopies }} / {{ book.totalCopies }}</strong>
+                  <small>{{ 'available' | t }}</small>
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="ebook">
+              <th mat-header-cell *matHeaderCellDef class="hide-mobile">{{ 'E-book' | t }}</th>
+              <td mat-cell *matCellDef="let book" class="hide-mobile">
+                @if (book.hasEbook) {
+                  <span class="badge primary">
+                    {{ book.availableEbookLicenses }} / {{ book.ebookLicenses }}
+                    {{ 'licenses' | t }}
+                  </span>
+                } @else {
+                  <span class="hint">—</span>
+                }
               </td>
             </ng-container>
 
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef>
-                <span class="cdk-visually-hidden">Actions</span>
+                <span class="cdk-visually-hidden">{{ 'Actions' | t }}</span>
               </th>
               <td mat-cell *matCellDef="let book" class="actions-cell">
                 <button
                   mat-icon-button
-                  matTooltip="Edit"
-                  [attr.aria-label]="'Edit ' + book.title"
+                  [matTooltip]="'Copies, e-book and waiting list' | t"
+                  [attr.aria-label]="'Manage {title}' | t: { title: book.title }"
+                  (click)="manage(book)"
+                >
+                  <mat-icon>inventory_2</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  [matTooltip]="'Edit' | t"
+                  [attr.aria-label]="'Edit {title}' | t: { title: book.title }"
                   (click)="edit(book)"
                 >
                   <mat-icon>edit</mat-icon>
                 </button>
                 <button
                   mat-icon-button
-                  matTooltip="Remove"
-                  [attr.aria-label]="'Remove ' + book.title"
+                  [matTooltip]="'Remove' | t"
+                  [attr.aria-label]="'Remove {title}' | t: { title: book.title }"
                   (click)="remove(book)"
                 >
                   <mat-icon>delete</mat-icon>
@@ -88,7 +130,7 @@
             [pageSize]="pageSize"
             [hidePageSize]="true"
             (page)="changePage($event)"
-            aria-label="Book pages"
+            [attr.aria-label]="'Book pages' | t"
           />
         </div>
       }

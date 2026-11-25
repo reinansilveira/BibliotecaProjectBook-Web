@@ -26,3 +26,45 @@
   display: flex;
   justify-content: flex-end;
 }
+
+.profile-skeleton {
+  height: 420px;
+  border-radius: var(--app-radius);
+}
+
+.card + .card {
+  margin-top: 20px;
+}
+
+.email-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+
+  mat-icon {
+    color: var(--mat-sys-tertiary);
+
+    &.ok {
+      color: var(--mat-sys-primary);
+    }
+  }
+
+  div {
+    flex: 1 1 200px;
+    display: flex;
+    flex-direction: column;
+
+    span {
+      color: var(--mat-sys-on-surface-variant);
+      font: var(--mat-sys-body-small);
+    }
+  }
+}
+
+.card-title {
+  font-family: var(--app-serif);
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0 0 12px;
+}

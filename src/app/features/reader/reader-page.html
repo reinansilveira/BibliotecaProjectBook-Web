@@ -1,0 +1,107 @@
+<section class="reader">
+  <header class="reader-bar">
+    <a mat-icon-button routerLink="/account/loans" [attr.aria-label]="'Back to my library' | t">
+      <mat-icon>arrow_back</mat-icon>
+    </a>
+    <div class="reader-title">
+      <strong>{{ title() }}</strong>
+      @if (loan(); as loan) {
+        <small>{{ loan.bookAuthor }}</small>
+      }
+    </div>
+
+    @if (status() === 'epub') {
+      @if (toc().length > 0) {
+        <button
+          mat-icon-button
+          type="button"
+          [matMenuTriggerFor]="tocMenu"
+          [attr.aria-label]="'Contents' | t"
+        >
+          <mat-icon>toc</mat-icon>
+        </button>
+        <mat-menu #tocMenu="matMenu" class="toc-menu">
+          @for (entry of toc(); track entry.href) {
+            <button mat-menu-item (click)="goTo(entry)">{{ entry.label }}</button>
+          }
+        </mat-menu>
+      }
+      <button
+        mat-icon-button
+        type="button"
+        [attr.aria-label]="'Smaller text' | t"
+        (click)="changeFont(-1)"
+      >
+        <mat-icon>text_decrease</mat-icon>
+      </button>
+      <button
+        mat-icon-button
+        type="button"
+        [attr.aria-label]="'Larger text' | t"
+        (click)="changeFont(1)"
+      >
+        <mat-icon>text_increase</mat-icon>
+      </button>
+    }
+  </header>
+
+  <div class="stage">
+    @switch (status()) {
+      @case ('loading') {
+        <div class="loading" role="status">
+          <span class="spinner"></span>
+          {{ 'Opening your e-book…' | t }}
+        </div>
+      }
+      @case ('error') {
+        <app-empty-state icon="menu_book" [title]="'We could not open this e-book' | t">
+          {{ message() | t }}
+          <a mat-stroked-button routerLink="/account/loans">{{ 'Back to my library' | t }}</a>
+        </app-empty-state>
+      }
+      @case ('pdf') {
+        @if (pdfUrl(); as url) {
+          <iframe class="pdf" [src]="url" [title]="title()"></iframe>
+        }
+      }
+    }
+    <div #host class="epub" [class.visible]="status() === 'epub'"></div>
+  </div>
+
+  <footer class="reader-footer">
+    @if (status() === 'epub') {
+      <button mat-stroked-button type="button" (click)="previous()">
+        <mat-icon>chevron_left</mat-icon>
+        {{ 'Previous' | t }}
+      </button>
+    }
+    <div class="progress">
+      <div
+        class="track"
+        role="progressbar"
+        [attr.aria-valuenow]="percentage() | localNumber: '1.0-0'"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-label]="'Reading progress' | t"
+      >
+        <span [style.width.%]="percentage()"></span>
+      </div>
+      <small>
+        {{ 'Read {percent}%' | t: { percent: (percentage() | localNumber: '1.0-0') } }}
+        · {{ (saved() ? 'Progress saved' : 'Saving…') | t }}
+      </small>
+    </div>
+    @if (status() === 'epub') {
+      <button mat-stroked-button type="button" (click)="next()">
+        {{ 'Next' | t }}
+        <mat-icon iconPositionEnd>chevron_right</mat-icon>
+      </button>
+    }
+    @if (status() === 'pdf') {
+      <button mat-flat-button type="button" (click)="markFinished()">
+        <mat-icon>task_alt</mat-icon>
+        {{ 'Mark as finished' | t }}
+      </button>
+    }
+  </footer>
+</section>

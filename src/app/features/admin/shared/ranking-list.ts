@@ -1,12 +1,12 @@
-import { DecimalPipe } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MostBorrowedBook } from '../../../core/api/models';
+import { LocalNumberPipe, TranslatePipe } from '../../../core/i18n/pipes';
 import { BookCover } from '../../../shared/book-cover';
 
 @Component({
   selector: 'app-ranking-list',
-  imports: [BookCover, DecimalPipe, RouterLink],
+  imports: [BookCover, LocalNumberPipe, RouterLink, TranslatePipe],
   template: `
     <ol class="ranking">
       @for (item of items(); track item.bookId) {
@@ -22,7 +22,10 @@ import { BookCover } from '../../../shared/book-cover';
               <span [style.width.%]="(item.totalLoans / highest()) * 100"></span>
             </span>
           </span>
-          <span class="total">{{ item.totalLoans | number }}<small>loans</small></span>
+          <span class="total"
+            >{{ item.totalLoans | localNumber
+            }}<small>{{ (item.totalLoans === 1 ? 'loan' : 'loans') | t }}</small></span
+          >
         </li>
       }
     </ol>
@@ -42,9 +45,10 @@ import { BookCover } from '../../../shared/book-cover';
     }
 
     li {
-      display: flex;
+      display: grid;
+      grid-template-columns: 28px 36px minmax(0, 1fr) auto;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       padding: 10px 8px;
       border-radius: 12px;
 

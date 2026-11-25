@@ -1,0 +1,130 @@
+mat-dialog-content {
+  min-width: min(600px, 86vw);
+  min-height: 360px;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 2px 4px;
+
+  > button {
+    align-self: flex-start;
+  }
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+
+  mat-form-field {
+    width: 160px;
+  }
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius-small);
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+
+    & + li {
+      border-top: 1px solid var(--mat-sys-outline-variant);
+    }
+
+    > mat-icon {
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  .empty {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.grow {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  small {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.position {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font: var(--mat-sys-label-large);
+}
+
+.status-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+
+  mat-icon {
+    color: var(--mat-sys-primary);
+  }
+}
+
+.licenses {
+  width: 100%;
+  max-width: 320px;
+}
+
+.source {
+  padding-top: 14px;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+
+  h3 {
+    margin: 0;
+    font: var(--mat-sys-title-small);
+  }
+
+  .hint {
+    margin: 4px 0 10px;
+  }
+}
+
+.file {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 320px;
+  padding: 10px 14px;
+  border: 1px dashed var(--mat-sys-outline);
+  border-radius: var(--app-radius-small);
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+}
+
+.rows-skeleton {
+  height: 160px;
+  border-radius: var(--app-radius-small);
+}

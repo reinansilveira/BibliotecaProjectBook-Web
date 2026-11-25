@@ -1,10 +1,16 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { finalize, firstValueFrom, map, Observable, shareReplay, throwError } from 'rxjs';
 import { API_URL } from '../api/api-url';
 import { LoginRequest, Member, RegisterMemberRequest, Role, TokenResponse } from '../api/models';
 import { TokenStorage } from './token-storage';
+
+const TEMPORARY_STATUSES = [0, 429, 502, 503, 504];
+
+function isTemporaryFailure(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && TEMPORARY_STATUSES.includes(error.status);
+}
 
 export interface Session {
   memberId: string;
@@ -65,7 +71,11 @@ export class AuthService {
 
     try {
       await firstValueFrom(this.refresh());
-    } catch {
+    } catch (error: unknown) {
+      if (isTemporaryFailure(error)) {
+        return;
+      }
+
       this.clearSession();
     }
   }

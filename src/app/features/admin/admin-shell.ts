@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { TranslatePipe } from '../../core/i18n/pipes';
 
 interface AdminLink {
   path: string;
@@ -10,19 +11,21 @@ interface AdminLink {
 
 @Component({
   selector: 'app-admin-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule, TranslatePipe],
   template: `
     <section class="page">
-      <span class="eyebrow">Administration</span>
-      <h1 class="page-title">Library dashboard</h1>
-      <p class="page-subtitle">Manage the catalog, members, overdue loans and reports.</p>
+      <span class="eyebrow">{{ 'Administration' | t }}</span>
+      <h1 class="page-title">{{ 'Library dashboard' | t }}</h1>
+      <p class="page-subtitle">
+        {{ 'Manage the catalog, members, overdue loans and reports.' | t }}
+      </p>
 
       <div class="layout">
-        <nav class="side-nav" aria-label="Administration sections">
+        <nav class="side-nav" [attr.aria-label]="'Administration sections' | t">
           @for (link of links; track link.path) {
             <a [routerLink]="link.path" routerLinkActive="active" ariaCurrentWhenActive="page">
               <mat-icon>{{ link.icon }}</mat-icon>
-              <span>{{ link.label }}</span>
+              <span>{{ link.label | t }}</span>
             </a>
           }
         </nav>
@@ -102,7 +105,8 @@ export class AdminShell {
     { path: 'overview', label: 'Overview', icon: 'space_dashboard' },
     { path: 'books', label: 'Books', icon: 'menu_book' },
     { path: 'members', label: 'Members', icon: 'group' },
-    { path: 'blacklist', label: 'Blacklist', icon: 'block' },
+    { path: 'fines', label: 'Fines', icon: 'receipt_long' },
     { path: 'reports', label: 'Reports', icon: 'insights' },
+    { path: 'audit', label: 'Audit log', icon: 'history' },
   ];
 }

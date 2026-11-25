@@ -1,9 +1,10 @@
 import { Component, computed, input } from '@angular/core';
-import { LoanStatus } from '../core/api/models';
+import { TranslatePipe } from '../core/i18n/pipes';
 
 @Component({
   selector: 'app-loan-status-chip',
-  template: `<span class="chip" [class]="cssClass()">{{ status() }}</span>`,
+  imports: [TranslatePipe],
+  template: `<span class="chip" [class]="cssClass()">{{ status() | t }}</span>`,
   styles: `
     .chip {
       display: inline-flex;
@@ -13,6 +14,8 @@ import { LoanStatus } from '../core/api/models';
       border-radius: 999px;
       font: var(--mat-sys-label-medium);
       white-space: nowrap;
+      background: var(--mat-sys-surface-container-high);
+      color: var(--mat-sys-on-surface-variant);
     }
 
     .chip::before {
@@ -23,24 +26,27 @@ import { LoanStatus } from '../core/api/models';
       background: currentColor;
     }
 
-    .active {
+    .active,
+    .ready,
+    .paid {
       background: var(--mat-sys-primary-container);
       color: var(--mat-sys-on-primary-container);
     }
 
-    .overdue {
+    .overdue,
+    .unpaid {
       background: var(--mat-sys-error-container);
       color: var(--mat-sys-on-error-container);
     }
 
-    .returned {
-      background: var(--mat-sys-surface-container-high);
-      color: var(--mat-sys-on-surface-variant);
+    .waiting {
+      background: var(--mat-sys-tertiary-container);
+      color: var(--mat-sys-on-tertiary-container);
     }
   `,
 })
 export class LoanStatusChip {
-  readonly status = input.required<LoanStatus>();
+  readonly status = input.required<string>();
 
   protected readonly cssClass = computed(() => `chip ${this.status().toLowerCase()}`);
 }

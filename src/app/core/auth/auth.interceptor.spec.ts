@@ -41,15 +41,15 @@ describe('authInterceptor', () => {
 
   function signIn(): void {
     auth.login({ email: 'ana@email.com', password: 'secret' }).subscribe();
-    http.expectOne('/api/auth/login').flush(session('access-1', 'refresh-1'));
+    http.expectOne('/api/v1/auth/login').flush(session('access-1', 'refresh-1'));
   }
 
   it('sends the access token as a bearer header', () => {
     signIn();
 
-    client.get('/api/auth/me').subscribe();
+    client.get('/api/v1/auth/me').subscribe();
 
-    expect(http.expectOne('/api/auth/me').request.headers.get('Authorization')).toBe(
+    expect(http.expectOne('/api/v1/auth/me').request.headers.get('Authorization')).toBe(
       'Bearer access-1',
     );
   });
@@ -57,20 +57,20 @@ describe('authInterceptor', () => {
   it('does not send a token to public authentication endpoints', () => {
     signIn();
 
-    client.post('/api/auth/refresh', {}).subscribe();
+    client.post('/api/v1/auth/refresh', {}).subscribe();
 
-    expect(http.expectOne('/api/auth/refresh').request.headers.has('Authorization')).toBe(false);
+    expect(http.expectOne('/api/v1/auth/refresh').request.headers.has('Authorization')).toBe(false);
   });
 
   it('refreshes the session and retries the request after a 401', () => {
     signIn();
     let body: unknown;
 
-    client.get('/api/auth/me').subscribe((response) => (body = response));
-    http.expectOne('/api/auth/me').flush(null, { status: 401, statusText: 'Unauthorized' });
-    http.expectOne('/api/auth/refresh').flush(session('access-2', 'refresh-2'));
+    client.get('/api/v1/auth/me').subscribe((response) => (body = response));
+    http.expectOne('/api/v1/auth/me').flush(null, { status: 401, statusText: 'Unauthorized' });
+    http.expectOne('/api/v1/auth/refresh').flush(session('access-2', 'refresh-2'));
 
-    const retry = http.expectOne('/api/auth/me');
+    const retry = http.expectOne('/api/v1/auth/me');
     expect(retry.request.headers.get('Authorization')).toBe('Bearer access-2');
     retry.flush({ name: 'Ana Smith' });
 
@@ -81,9 +81,9 @@ describe('authInterceptor', () => {
     signIn();
     let failed = false;
 
-    client.get('/api/auth/me').subscribe({ error: () => (failed = true) });
-    http.expectOne('/api/auth/me').flush(null, { status: 401, statusText: 'Unauthorized' });
-    http.expectOne('/api/auth/refresh').flush(null, { status: 401, statusText: 'Unauthorized' });
+    client.get('/api/v1/auth/me').subscribe({ error: () => (failed = true) });
+    http.expectOne('/api/v1/auth/me').flush(null, { status: 401, statusText: 'Unauthorized' });
+    http.expectOne('/api/v1/auth/refresh').flush(null, { status: 401, statusText: 'Unauthorized' });
 
     expect(failed).toBe(true);
     expect(auth.isAuthenticated()).toBe(false);
@@ -93,11 +93,11 @@ describe('authInterceptor', () => {
     let status = 0;
 
     client
-      .get('/api/members')
+      .get('/api/v1/members')
       .subscribe({ error: (error: { status: number }) => (status = error.status) });
-    http.expectOne('/api/members').flush(null, { status: 401, statusText: 'Unauthorized' });
+    http.expectOne('/api/v1/members').flush(null, { status: 401, statusText: 'Unauthorized' });
 
     expect(status).toBe(401);
-    http.expectNone('/api/auth/refresh');
+    http.expectNone('/api/v1/auth/refresh');
   });
 });

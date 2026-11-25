@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,7 +8,9 @@ import { MatTableModule } from '@angular/material/table';
 import { switchMap } from 'rxjs';
 import { MembersApi } from '../../../core/api/members-api';
 import { Member, PageQuery } from '../../../core/api/models';
+import { provideLocalizedPaginator } from '../../../core/i18n/paginator-intl';
 import { toLoadState } from '../../../core/http/load-state';
+import { LocalDatePipe, TranslatePipe } from '../../../core/i18n/pipes';
 import { EmptyState } from '../../../shared/empty-state';
 import { initials } from '../../../shared/initials';
 import { MemberLoansDialog } from './member-loans-dialog';
@@ -19,13 +20,15 @@ const PAGE_SIZE = 10;
 @Component({
   selector: 'app-admin-members-page',
   imports: [
-    DatePipe,
+    LocalDatePipe,
+    TranslatePipe,
     EmptyState,
     MatButtonModule,
     MatIconModule,
     MatPaginatorModule,
     MatTableModule,
   ],
+  providers: [provideLocalizedPaginator()],
   templateUrl: './admin-members-page.html',
 })
 export class AdminMembersPage {

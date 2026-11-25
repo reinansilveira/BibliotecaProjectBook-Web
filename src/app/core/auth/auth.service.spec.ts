@@ -36,7 +36,7 @@ describe('AuthService', () => {
 
   it('starts a session and stores the refresh token after login', () => {
     service.login({ email: 'ana@email.com', password: 'secret' }).subscribe();
-    http.expectOne('/api/auth/login').flush(tokenResponse);
+    http.expectOne('/api/v1/auth/login').flush(tokenResponse);
 
     expect(service.isAuthenticated()).toBe(true);
     expect(service.isAdmin()).toBe(true);
@@ -50,7 +50,7 @@ describe('AuthService', () => {
     service.refresh().subscribe();
     service.refresh().subscribe();
 
-    const request = http.expectOne('/api/auth/refresh');
+    const request = http.expectOne('/api/v1/auth/refresh');
     expect(request.request.body).toEqual({ refreshToken: 'refresh-1' });
     request.flush({ ...tokenResponse, accessToken: 'access-2', refreshToken: 'refresh-2' });
 
@@ -64,28 +64,41 @@ describe('AuthService', () => {
     service.refresh().subscribe({ error: () => (failed = true) });
 
     expect(failed).toBe(true);
-    http.expectNone('/api/auth/refresh');
+    http.expectNone('/api/v1/auth/refresh');
   });
 
   it('clears an invalid stored session when restoring', async () => {
     storage.write('expired-token');
 
     const restoring = service.restoreSession();
-    http.expectOne('/api/auth/refresh').flush(null, { status: 401, statusText: 'Unauthorized' });
+    http.expectOne('/api/v1/auth/refresh').flush(null, { status: 401, statusText: 'Unauthorized' });
     await restoring;
 
     expect(service.isAuthenticated()).toBe(false);
     expect(storage.read()).toBeNull();
   });
 
+  it('keeps the stored session when the refresh is only throttled', async () => {
+    storage.write('valid-token');
+
+    const restoring = service.restoreSession();
+    http
+      .expectOne('/api/v1/auth/refresh')
+      .flush(null, { status: 429, statusText: 'Too Many Requests' });
+    await restoring;
+
+    expect(service.isAuthenticated()).toBe(false);
+    expect(storage.read()).toBe('valid-token');
+  });
+
   it('revokes the refresh token and leaves on logout', () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     service.login({ email: 'ana@email.com', password: 'secret' }).subscribe();
-    http.expectOne('/api/auth/login').flush(tokenResponse);
+    http.expectOne('/api/v1/auth/login').flush(tokenResponse);
 
     service.logout();
 
-    const request = http.expectOne('/api/auth/logout');
+    const request = http.expectOne('/api/v1/auth/logout');
     expect(request.request.body).toEqual({ refreshToken: 'refresh-1' });
     request.flush(null);
     expect(service.isAuthenticated()).toBe(false);

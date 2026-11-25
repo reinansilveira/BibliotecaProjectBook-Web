@@ -8,7 +8,7 @@ test.describe('Authentication', () => {
     await register(page, member);
 
     await expect(page.getByText(`Welcome, ${member.name}!`)).toBeVisible();
-    await expect(page.getByRole('link', { name: 'My loans' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'My library' })).toBeVisible();
   });
 
   test('the session survives a page reload', async ({ page }) => {
@@ -16,13 +16,13 @@ test.describe('Authentication', () => {
 
     await page.reload();
 
-    await expect(page.getByRole('link', { name: 'My loans' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'My library' })).toBeVisible();
   });
 
   test('protected pages send visitors to the login page', async ({ page }) => {
-    await page.goto('/my-loans');
+    await page.goto('/account/loans');
 
-    await expect(page).toHaveURL(/\/login\?returnUrl=%2Fmy-loans/);
+    await expect(page).toHaveURL(/\/login\?returnUrl=%2Faccount%2Floans/);
   });
 
   test('wrong credentials show an error', async ({ page }) => {

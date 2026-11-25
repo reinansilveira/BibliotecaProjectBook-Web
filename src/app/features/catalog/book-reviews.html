@@ -1,0 +1,83 @@
+<div class="reviews">
+  <aside class="summary">
+    <h2 class="section-title">{{ 'Reader reviews' | t }}</h2>
+    @if (book().ratingsCount > 0) {
+      <span class="average">{{ book().averageRating.toFixed(1) }}</span>
+      <app-star-rating [rating]="book().averageRating" />
+      <span class="hint">{{
+        (book().ratingsCount === 1 ? '{count} rating' : '{count} ratings')
+          | t: { count: book().ratingsCount }
+      }}</span>
+    } @else {
+      <p class="hint">{{ 'Be the first to rate this book.' | t }}</p>
+    }
+
+    @if (auth.isAuthenticated()) {
+      <form class="mine surface" (ngSubmit)="save()">
+        <strong>{{ (mine() ? 'Your review' : 'Rate this book') | t }}</strong>
+        <app-star-input [(value)]="rating" />
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'What did you think? (optional)' | t }}</mat-label>
+          <textarea
+            matInput
+            rows="3"
+            maxlength="2000"
+            name="comment"
+            [ngModel]="comment()"
+            (ngModelChange)="comment.set($event)"
+          ></textarea>
+        </mat-form-field>
+        <div class="mine-actions">
+          @if (mine()) {
+            <button mat-button type="button" [disabled]="saving()" (click)="remove()">
+              {{ 'Delete' | t }}
+            </button>
+          }
+          <button mat-flat-button type="submit" [disabled]="saving()">
+            {{ (mine() ? 'Update review' : 'Publish review') | t }}
+          </button>
+        </div>
+        <small class="hint">{{ 'Only readers who borrowed this book can review it.' | t }}</small>
+      </form>
+    } @else {
+      <p class="hint">
+        <a class="link" routerLink="/login">{{ 'Sign in' | t }}</a>
+        {{ 'to rate and review this book.' | t }}
+      </p>
+    }
+  </aside>
+
+  <div class="list">
+    @if (loading()) {
+      @for (placeholder of [1, 2, 3]; track placeholder) {
+        <span class="skeleton review-skeleton"></span>
+      }
+    } @else {
+      @for (review of reviews(); track review.id) {
+        <article class="review">
+          <header>
+            <span class="avatar">{{ review.reviewerName.charAt(0) }}</span>
+            <span class="who">
+              <strong>{{ review.reviewerName }}</strong>
+              <time>{{ review.updatedAt | localDate }}</time>
+            </span>
+            <app-star-rating [rating]="review.rating" compact />
+          </header>
+          @if (review.comment) {
+            <p>{{ review.comment }}</p>
+          }
+        </article>
+      } @empty {
+        <div class="no-reviews">
+          <mat-icon>rate_review</mat-icon>
+          <span>{{ 'No reviews yet.' | t }}</span>
+        </div>
+      }
+      @if (hasMore()) {
+        <button mat-stroked-button type="button" (click)="loadMore()">
+          {{ 'Show more reviews' | t }}
+        </button>
+      }
+    }
+  </div>
+</div>

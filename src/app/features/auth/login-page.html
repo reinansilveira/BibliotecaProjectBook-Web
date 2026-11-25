@@ -3,32 +3,32 @@
 
   <div class="panel">
     <div class="heading">
-      <span class="eyebrow">Welcome back</span>
-      <h1>Sign in to your library</h1>
-      <p>Pick up where you left off and keep an eye on your due dates.</p>
+      <span class="eyebrow">{{ 'Welcome back' | t }}</span>
+      <h1>{{ 'Sign in to your library' | t }}</h1>
+      <p>{{ 'Pick up where you left off and keep an eye on your due dates.' | t }}</p>
     </div>
 
     @if (expired()) {
       <div class="notice" role="status">
         <mat-icon>schedule</mat-icon>
-        Your session expired. Please sign in again.
+        {{ 'Your session expired. Please sign in again.' | t }}
       </div>
     }
 
     <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
       <mat-form-field appearance="outline">
-        <mat-label>Email</mat-label>
+        <mat-label>{{ 'Email' | t }}</mat-label>
         <mat-icon matPrefix>mail</mat-icon>
         <input matInput type="email" formControlName="email" autocomplete="email" />
         @if (form.controls.email.hasError('email')) {
-          <mat-error>Enter a valid email.</mat-error>
+          <mat-error>{{ 'Enter a valid email.' | t }}</mat-error>
         } @else {
-          <mat-error>Email is required.</mat-error>
+          <mat-error>{{ 'Email is required.' | t }}</mat-error>
         }
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Password</mat-label>
+        <mat-label>{{ 'Password' | t }}</mat-label>
         <mat-icon matPrefix>lock</mat-icon>
         <input
           matInput
@@ -40,17 +40,19 @@
           mat-icon-button
           matSuffix
           type="button"
-          [attr.aria-label]="revealed() ? 'Hide characters' : 'Reveal characters'"
+          [attr.aria-label]="(revealed() ? 'Hide characters' : 'Reveal characters') | t"
           [attr.aria-pressed]="revealed()"
           (click)="revealed.set(!revealed())"
         >
           <mat-icon>{{ revealed() ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
-        <mat-error>Password is required.</mat-error>
+        <mat-error>{{ 'Password is required.' | t }}</mat-error>
       </mat-form-field>
 
+      <a class="link forgot" routerLink="/forgot-password">{{ 'Forgot your password?' | t }}</a>
+
       <button mat-flat-button class="submit" type="submit" [disabled]="submitting()">
-        Sign in
+        {{ 'Sign in' | t }}
       </button>
     </form>
 
@@ -58,15 +60,16 @@
       <div class="demo">
         <mat-icon>science</mat-icon>
         <span>
-          <strong>Local demo</strong>
+          <strong>{{ 'Local demo' | t }}</strong>
           <small>admin&#64;library.local · Admin&#64;123</small>
         </span>
-        <button mat-button type="button" (click)="useDemoAccount()">Use it</button>
+        <button mat-button type="button" (click)="useDemoAccount()">{{ 'Use it' | t }}</button>
       </div>
     }
 
     <p class="alternative">
-      New here? <a class="link" routerLink="/register">Create an account</a>
+      {{ 'New here?' | t }}
+      <a class="link" routerLink="/register">{{ 'Create an account' | t }}</a>
     </p>
   </div>
 </section>

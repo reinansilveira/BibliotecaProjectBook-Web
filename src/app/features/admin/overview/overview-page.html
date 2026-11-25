@@ -1,0 +1,157 @@
+@if (state(); as current) {
+  @switch (current.status) {
+    @case ('loading') {
+      <div class="kpi-grid" aria-busy="true" [attr.aria-label]="'Loading dashboard' | t">
+        @for (placeholder of [1, 2, 3, 4, 5, 6, 7, 8]; track placeholder) {
+          <span class="skeleton kpi-skeleton"></span>
+        }
+      </div>
+      <span class="skeleton chart-skeleton"></span>
+    }
+    @case ('error') {
+      <p class="hint">{{ current.message | t }}</p>
+    }
+    @case ('loaded') {
+      @let dashboard = current.value.dashboard;
+      <div class="kpi-grid">
+        <div class="kpi">
+          <span class="kpi-label"><mat-icon>menu_book</mat-icon>{{ 'Books' | t }}</span>
+          <span class="kpi-value">{{ dashboard.books | localNumber }}</span>
+          <span class="kpi-note">{{
+            '{copies} copies · {ebooks} e-books'
+              | t: { copies: dashboard.copies, ebooks: dashboard.ebooks }
+          }}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label"><mat-icon>group</mat-icon>{{ 'Members' | t }}</span>
+          <span class="kpi-value">{{ dashboard.members | localNumber }}</span>
+          <span class="kpi-note">{{
+            '{count} new this month' | t: { count: dashboard.newMembersThisMonth }
+          }}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label"><mat-icon>swap_horiz</mat-icon>{{ 'Active loans' | t }}</span>
+          <span class="kpi-value">{{ dashboard.activeLoans | localNumber }}</span>
+          <span class="kpi-note">{{
+            '{count} e-book loans' | t: { count: dashboard.activeEbookLoans }
+          }}</span>
+        </div>
+        <div class="kpi" [class.alert]="dashboard.overdueLoans > 0">
+          <span class="kpi-label"><mat-icon>warning</mat-icon>{{ 'Overdue' | t }}</span>
+          <span class="kpi-value">{{ dashboard.overdueLoans | localNumber }}</span>
+          <span class="kpi-note">{{ 'printed books past the due date' | t }}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label"><mat-icon>today</mat-icon>{{ 'Today' | t }}</span>
+          <span class="kpi-value">{{ dashboard.loansToday }}</span>
+          <span class="kpi-note">{{
+            'loans · {count} returns' | t: { count: dashboard.returnsToday }
+          }}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label"><mat-icon>hourglass_top</mat-icon>{{ 'Waiting list' | t }}</span>
+          <span class="kpi-value">{{ dashboard.waitingReservations }}</span>
+          <span class="kpi-note">{{
+            '{count} ready to pick up' | t: { count: dashboard.readyReservations }
+          }}</span>
+        </div>
+        <div class="kpi" [class.alert]="dashboard.unpaidFines > 0">
+          <span class="kpi-label"><mat-icon>receipt_long</mat-icon>{{ 'Unpaid fines' | t }}</span>
+          <span class="kpi-value">{{ dashboard.unpaidFines }}</span>
+          <span class="kpi-note">{{
+            '{amount} outstanding'
+              | t: { amount: (dashboard.unpaidFinesAmount | localNumber: '1.2-2') }
+          }}</span>
+        </div>
+        <div class="kpi maintenance">
+          <span class="kpi-label"><mat-icon>build</mat-icon>{{ 'Maintenance' | t }}</span>
+          @if (maintenance(); as result) {
+            <span class="kpi-note">
+              {{
+                '{expired} e-books expired, {holds} holds expired, {promoted} promoted, {reminders} reminders, {notices} overdue notices.'
+                  | t
+                    : {
+                        expired: result.expiredEbookLoans,
+                        holds: result.expiredHolds,
+                        promoted: result.promotedReservations,
+                        reminders: result.dueSoonReminders,
+                        notices: result.overdueNotices,
+                      }
+              }}
+            </span>
+          } @else {
+            <span class="kpi-note">{{
+              'Expire e-books and holds, promote waiting lists and send reminders.' | t
+            }}</span>
+          }
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="running()"
+            (click)="runMaintenance()"
+          >
+            {{ 'Run maintenance' | t }}
+          </button>
+        </div>
+      </div>
+
+      <div class="panels">
+        <section class="surface card">
+          <div class="card-header">
+            <div>
+              <h2>{{ 'Loans in {year}' | t: { year } }}</h2>
+              <p>{{ 'Monthly loans and overdue returns, grouped by due date.' | t }}</p>
+            </div>
+            <a class="link" routerLink="../reports">{{ 'Open reports' | t }}</a>
+          </div>
+          <app-monthly-chart [months]="current.value.months" />
+        </section>
+
+        <section class="surface card">
+          <div class="card-header">
+            <div>
+              <h2>{{ 'Most borrowed' | t }}</h2>
+              <p>{{ 'This month.' | t }}</p>
+            </div>
+          </div>
+          @if (dashboard.topBooksThisMonth.length > 0) {
+            <app-ranking-list [items]="dashboard.topBooksThisMonth" />
+          } @else {
+            <p class="hint">{{ 'No loans yet.' | t }}</p>
+          }
+        </section>
+      </div>
+
+      <div class="shortcuts">
+        <a class="shortcut surface" routerLink="../books">
+          <mat-icon>qr_code_scanner</mat-icon>
+          <span
+            ><strong>{{ 'Add a book by ISBN' | t }}</strong
+            ><small>{{ 'Details and cover from Open Library' | t }}</small></span
+          >
+        </a>
+        <a class="shortcut surface" routerLink="../members">
+          <mat-icon>assignment_return</mat-icon>
+          <span
+            ><strong>{{ 'Register a return' | t }}</strong
+            ><small>{{ 'Find the member' | t }}</small></span
+          >
+        </a>
+        <a class="shortcut surface" routerLink="../fines">
+          <mat-icon>receipt_long</mat-icon>
+          <span
+            ><strong>{{ 'Review fines' | t }}</strong
+            ><small>{{ 'Waive or follow up' | t }}</small></span
+          >
+        </a>
+        <a class="shortcut surface" routerLink="../audit">
+          <mat-icon>history</mat-icon>
+          <span
+            ><strong>{{ 'Audit log' | t }}</strong
+            ><small>{{ 'Who changed what, and when' | t }}</small></span
+          >
+        </a>
+      </div>
+    }
+  }
+}

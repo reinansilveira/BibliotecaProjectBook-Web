@@ -1,13 +1,17 @@
-import { DecimalPipe } from '@angular/common';
+import { DOCUMENT } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { switchMap } from 'rxjs';
 import { MonthlyOverdue } from '../../../core/api/models';
-import { ReportsApi } from '../../../core/api/reports-api';
+import { ReportExport, ReportsApi } from '../../../core/api/reports-api';
 import { toLoadState } from '../../../core/http/load-state';
+import { LocalNumberPipe, TranslatePipe } from '../../../core/i18n/pipes';
+import { Notifier } from '../../../core/notifications/notifier';
+import { saveFile } from '../../../shared/download';
 import { EmptyState } from '../../../shared/empty-state';
 import { MonthlyChart } from '../shared/monthly-chart';
 import { RankingList } from '../shared/ranking-list';
@@ -41,19 +45,25 @@ export function summarize(months: MonthlyOverdue[]): ReportSummary {
 @Component({
   selector: 'app-reports-page',
   imports: [
-    DecimalPipe,
+    LocalNumberPipe,
     EmptyState,
     MatButtonModule,
     MatFormFieldModule,
+    MatIconModule,
     MatInputModule,
     MonthlyChart,
     RankingList,
+    TranslatePipe,
   ],
   templateUrl: './reports-page.html',
   styleUrl: './reports-page.scss',
 })
 export class ReportsPage {
   private readonly reportsApi = inject(ReportsApi);
+  private readonly notifier = inject(Notifier);
+  private readonly document = inject(DOCUMENT);
+
+  protected readonly exporting = signal<ReportExport | null>(null);
 
   protected readonly years = Array.from(
     { length: 5 },
@@ -86,5 +96,36 @@ export class ReportsPage {
 
   protected applyRanking(from: string, to: string): void {
     this.rankingFilter.set({ from: from || null, to: to || null });
+  }
+
+  protected exportOverdue(): void {
+    this.download('overdue-by-month', { year: this.year() }, `overdue-by-month-${this.year()}.csv`);
+  }
+
+  protected exportRanking(): void {
+    const filter = this.rankingFilter();
+    this.download('most-borrowed-books', { ...filter, top: 50 }, 'most-borrowed-books.csv');
+  }
+
+  protected exportLoans(from: string, to: string): void {
+    this.download('loans', { from: from || null, to: to || null }, 'loans.csv');
+  }
+
+  private download(
+    report: ReportExport,
+    filters: Record<string, string | number | null>,
+    fileName: string,
+  ): void {
+    this.exporting.set(report);
+    this.reportsApi.export(report, filters).subscribe({
+      next: (blob) => {
+        this.exporting.set(null);
+        saveFile(blob, fileName, this.document);
+      },
+      error: (error: unknown) => {
+        this.exporting.set(null);
+        this.notifier.error(error);
+      },
+    });
   }
 }

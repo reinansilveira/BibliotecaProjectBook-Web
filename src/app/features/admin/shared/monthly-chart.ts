@@ -1,6 +1,7 @@
-import { DecimalPipe } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { MonthlyOverdue } from '../../../core/api/models';
+import { I18n } from '../../../core/i18n/i18n.service';
+import { LocalNumberPipe, TranslatePipe } from '../../../core/i18n/pipes';
 
 export const MONTHS = [
   'Jan',
@@ -38,9 +39,9 @@ export function chartScale(highest: number): ChartScale {
 
 @Component({
   selector: 'app-monthly-chart',
-  imports: [DecimalPipe],
+  imports: [LocalNumberPipe, TranslatePipe],
   template: `
-    <div class="chart" role="img" aria-label="Loans and overdue returns per month">
+    <div class="chart" role="img" [attr.aria-label]="'Loans and overdue returns per month' | t">
       <div class="y-axis" aria-hidden="true">
         @for (tick of scale().ticks; track tick) {
           <span [style.bottom.%]="(tick / scale().max) * 100">{{ tick }}</span>
@@ -60,11 +61,11 @@ export function chartScale(highest: number): ChartScale {
                 <span class="bar overdue" [style.height]="height(month.overdueLoans)"></span>
               </div>
               <div class="tooltip" aria-hidden="true">
-                <strong>{{ monthNames[month.month - 1] }}</strong>
-                <span>{{ month.totalLoans }} loans</span>
+                <strong>{{ monthNames[month.month - 1] | t }}</strong>
+                <span>{{ '{count} loans' | t: { count: month.totalLoans } }}</span>
                 <span
-                  >{{ month.overdueLoans }} overdue ·
-                  {{ month.overduePercentage | number: '1.0-1' }}%</span
+                  >{{ '{count} overdue' | t: { count: month.overdueLoans } }} ·
+                  {{ month.overduePercentage | localNumber: '1.0-1' }}%</span
                 >
               </div>
             </div>
@@ -72,14 +73,14 @@ export function chartScale(highest: number): ChartScale {
         </div>
         <div class="x-axis" aria-hidden="true">
           @for (month of months(); track month.month) {
-            <span>{{ monthNames[month.month - 1] }}</span>
+            <span>{{ monthNames[month.month - 1] | t }}</span>
           }
         </div>
       </div>
     </div>
     <div class="legend">
-      <span><i class="swatch total"></i>Loans</span>
-      <span><i class="swatch overdue"></i>Overdue</span>
+      <span><i class="swatch total"></i>{{ 'Loans' | t }}</span>
+      <span><i class="swatch overdue"></i>{{ 'Overdue' | t }}</span>
     </div>
   `,
   styles: `
@@ -228,6 +229,8 @@ export function chartScale(highest: number): ChartScale {
   `,
 })
 export class MonthlyChart {
+  private readonly i18n = inject(I18n);
+
   readonly months = input.required<MonthlyOverdue[]>();
 
   protected readonly monthNames = MONTHS;
@@ -241,6 +244,10 @@ export class MonthlyChart {
   }
 
   protected label(month: MonthlyOverdue): string {
-    return `${MONTHS[month.month - 1]}: ${month.totalLoans} loans, ${month.overdueLoans} overdue`;
+    return this.i18n.t('{month}: {loans} loans, {overdue} overdue', {
+      month: this.i18n.t(MONTHS[month.month - 1]),
+      loans: month.totalLoans,
+      overdue: month.overdueLoans,
+    });
   }
 }

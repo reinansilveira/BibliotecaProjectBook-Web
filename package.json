@@ -10,8 +10,9 @@
     "test:ci": "ng test --watch=false --coverage",
     "e2e": "playwright test",
     "ng": "ng",
-    "format": "prettier --write \"src/**/*.{ts,html,scss}\" \"e2e/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.{ts,html,scss}\" \"e2e/**/*.ts\""
+    "format": "prettier --write \"src/**/*.{ts,html,scss}\" \"e2e/**/*.ts\" \"scripts/**/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,scss}\" \"e2e/**/*.ts\" \"scripts/**/*.mjs\"",
+    "i18n:check": "node scripts/check-translations.mjs"
   },
   "private": true,
   "packageManager": "npm@10.9.9",
@@ -24,6 +25,8 @@
     "@angular/material": "^22.3.0",
     "@angular/platform-browser": "^22.3.0",
     "@angular/router": "^22.3.0",
+    "@microsoft/signalr": "^11.0.0",
+    "epubjs": "^0.3.93",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

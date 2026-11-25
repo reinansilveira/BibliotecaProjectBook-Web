@@ -1,48 +1,156 @@
 <header class="header">
   <div class="bar">
-    <a class="brand" routerLink="/books" aria-label="Library home">
+    <a class="brand" routerLink="/books" [attr.aria-label]="'Library home' | t">
       <span class="brand-mark"><mat-icon>auto_stories</mat-icon></span>
-      <span class="brand-name">Library</span>
+      <span class="brand-name">{{ 'Library' | t }}</span>
     </a>
 
-    <nav class="primary-nav" aria-label="Main">
-      <a routerLink="/books" routerLinkActive="active">Discover</a>
+    <nav class="primary-nav" [attr.aria-label]="'Main' | t">
+      <a routerLink="/books" routerLinkActive="active">{{ 'Discover' | t }}</a>
       @if (auth.session()) {
-        <a routerLink="/my-loans" routerLinkActive="active">My loans</a>
+        <a routerLink="/account" routerLinkActive="active">{{ 'My library' | t }}</a>
       }
       @if (auth.isAdmin()) {
-        <a routerLink="/admin" routerLinkActive="active">Admin</a>
+        <a routerLink="/admin" routerLinkActive="active">{{ 'Admin' | t }}</a>
       }
     </nav>
 
-    <form class="search" role="search" (submit)="search($event, searchInput.value)">
+    <form class="search" role="search" (submit)="search($event)">
       <mat-icon class="search-icon">search</mat-icon>
       <input
-        #searchInput
         class="search-input"
         name="search"
         type="search"
-        placeholder="Search by title or author"
-        aria-label="Search books by title or author"
+        autocomplete="off"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-controls="search-suggestions"
+        [attr.aria-expanded]="panelOpen()"
+        [attr.aria-activedescendant]="activeIndex() >= 0 ? 'suggestion-' + activeIndex() : null"
+        [placeholder]="'Search by title or author' | t"
+        [attr.aria-label]="'Search books by title or author' | t"
+        [value]="term()"
+        (input)="onType($any($event.target).value)"
+        (keydown)="onSearchKey($event)"
+        (focus)="focused.set(true)"
+        (blur)="closeSoon()"
       />
+      @if (panelOpen()) {
+        <ul class="suggestions" id="search-suggestions" role="listbox">
+          @for (suggestion of suggestions(); track suggestion.id; let index = $index) {
+            <li
+              role="option"
+              [id]="'suggestion-' + index"
+              [attr.aria-selected]="activeIndex() === index"
+              [class.active]="activeIndex() === index"
+              (mousedown)="$event.preventDefault(); openSuggestion(suggestion)"
+              (mouseenter)="activeIndex.set(index)"
+            >
+              <span class="suggestion-cover">
+                <app-book-cover
+                  [title]="suggestion.title"
+                  [author]="suggestion.author"
+                  [coverUrl]="suggestion.coverUrl"
+                  display="thumb"
+                />
+              </span>
+              <span class="suggestion-text">
+                <strong>{{ suggestion.title }}</strong>
+                <small>{{ suggestion.author }}</small>
+              </span>
+            </li>
+          }
+        </ul>
+      }
     </form>
 
     <div class="actions">
       <button
+        type="button"
+        class="language-button"
+        [matMenuTriggerFor]="languageMenu"
+        [attr.aria-label]="'Change language' | t"
+      >
+        <mat-icon>translate</mat-icon>
+        <span>{{ i18n.option().short }}</span>
+      </button>
+
+      <mat-menu #languageMenu="matMenu" xPosition="before">
+        @for (language of languages; track language.code) {
+          <button
+            mat-menu-item
+            [attr.lang]="language.code"
+            [attr.aria-current]="language.code === i18n.language()"
+            (click)="i18n.use(language.code)"
+          >
+            <mat-icon>{{ language.code === i18n.language() ? 'check' : '' }}</mat-icon>
+            {{ language.label }}
+          </button>
+        }
+      </mat-menu>
+
+      <button
         mat-icon-button
         type="button"
+        class="hide-mobile"
         (click)="theme.toggle()"
-        [attr.aria-label]="theme.mode() === 'dark' ? 'Use light theme' : 'Use dark theme'"
+        [attr.aria-label]="(theme.mode() === 'dark' ? 'Use light theme' : 'Use dark theme') | t"
       >
         <mat-icon>{{ theme.mode() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
 
       @if (auth.session(); as session) {
         <button
+          mat-icon-button
+          type="button"
+          class="bell"
+          [matMenuTriggerFor]="notificationsMenu"
+          (menuOpened)="notifications.refresh()"
+          [attr.aria-label]="'Notifications, {count} unread' | t: { count: notifications.unread() }"
+        >
+          <mat-icon>notifications</mat-icon>
+          @if (notifications.unread() > 0) {
+            <span class="bell-badge" aria-hidden="true">{{
+              notifications.unread() > 9 ? '9+' : notifications.unread()
+            }}</span>
+          }
+        </button>
+
+        <mat-menu #notificationsMenu="matMenu" xPosition="before" class="notifications-menu">
+          <div class="notifications" (click)="$event.stopPropagation()" role="presentation">
+            <div class="notifications-header">
+              <strong>{{ 'Notifications' | t }}</strong>
+              @if (notifications.unread() > 0) {
+                <button mat-button type="button" (click)="notifications.markAllRead()">
+                  {{ 'Mark all as read' | t }}
+                </button>
+              }
+            </div>
+            @for (item of notifications.latest(); track item.id) {
+              <button
+                type="button"
+                class="notification"
+                [class.unread]="!item.readAt"
+                (click)="notifications.open(item)"
+              >
+                <mat-icon>{{ notificationIcon(item.type) }}</mat-icon>
+                <span>
+                  <strong>{{ item.title }}</strong>
+                  <small>{{ item.message }}</small>
+                  <time>{{ item.createdAt | localDate: 'short' }}</time>
+                </span>
+              </button>
+            } @empty {
+              <p class="notifications-empty">{{ 'You are all caught up.' | t }}</p>
+            }
+          </div>
+        </mat-menu>
+
+        <button
           type="button"
           class="account-button"
           [matMenuTriggerFor]="accountMenu"
-          aria-label="Account menu"
+          [attr.aria-label]="'Account menu' | t"
         >
           <span class="avatar">{{ initials() }}</span>
           <span class="account-name">{{ firstName() }}</span>
@@ -54,33 +162,37 @@
             <span class="avatar large">{{ initials() }}</span>
             <span class="menu-identity">
               <strong>{{ session.name }}</strong>
-              <span>{{ session.role }}</span>
+              <span>{{ session.role | t }}</span>
             </span>
           </div>
           <mat-divider />
+          <a mat-menu-item routerLink="/account/loans">
+            <mat-icon>bookmarks</mat-icon>
+            {{ 'My library' | t }}
+          </a>
           <a mat-menu-item routerLink="/profile">
             <mat-icon>person</mat-icon>
-            Profile
-          </a>
-          <a mat-menu-item routerLink="/my-loans">
-            <mat-icon>bookmarks</mat-icon>
-            My loans
+            {{ 'Profile' | t }}
           </a>
           @if (auth.isAdmin()) {
             <a mat-menu-item routerLink="/admin">
               <mat-icon>space_dashboard</mat-icon>
-              Administration
+              {{ 'Administration' | t }}
             </a>
           }
+          <button mat-menu-item class="show-mobile" (click)="theme.toggle()">
+            <mat-icon>{{ theme.mode() === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+            {{ (theme.mode() === 'dark' ? 'Use light theme' : 'Use dark theme') | t }}
+          </button>
           <mat-divider />
           <button mat-menu-item (click)="auth.logout()">
             <mat-icon>logout</mat-icon>
-            Sign out
+            {{ 'Sign out' | t }}
           </button>
         </mat-menu>
       } @else {
-        <a mat-button class="sign-in" routerLink="/login">Sign in</a>
-        <a mat-flat-button class="sign-up" routerLink="/register">Create account</a>
+        <a mat-button class="sign-in" routerLink="/login">{{ 'Sign in' | t }}</a>
+        <a mat-flat-button class="sign-up" routerLink="/register">{{ 'Create account' | t }}</a>
       }
     </div>
   </div>
@@ -95,45 +207,45 @@
     <div class="footer-brand">
       <span class="brand-mark small"><mat-icon>auto_stories</mat-icon></span>
       <span>
-        <strong>Library</strong>
-        <small>Borrow a book for 7 days, free of charge.</small>
+        <strong>{{ 'Library' | t }}</strong>
+        <small>{{ 'Printed books and e-books, free for every member.' | t }}</small>
       </span>
     </div>
     <p class="footer-meta">
-      Built with Angular 22, Angular Material 3 and ASP.NET Core. Covers from
+      {{ 'Built with Angular 22, Angular Material 3 and ASP.NET Core. Covers from' | t }}
       <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a>.
     </p>
   </div>
 </footer>
 
-<nav class="bottom-nav" aria-label="Mobile">
+<nav class="bottom-nav" [attr.aria-label]="'Mobile' | t">
   <a routerLink="/books" routerLinkActive="active">
     <mat-icon>explore</mat-icon>
-    <span>Discover</span>
+    <span>{{ 'Discover' | t }}</span>
   </a>
   @if (auth.session()) {
-    <a routerLink="/my-loans" routerLinkActive="active">
+    <a routerLink="/account" routerLinkActive="active">
       <mat-icon>bookmarks</mat-icon>
-      <span>Loans</span>
+      <span>{{ 'Library' | t }}</span>
     </a>
     @if (auth.isAdmin()) {
       <a routerLink="/admin" routerLinkActive="active">
         <mat-icon>space_dashboard</mat-icon>
-        <span>Admin</span>
+        <span>{{ 'Admin' | t }}</span>
       </a>
     }
     <a routerLink="/profile" routerLinkActive="active">
       <mat-icon>person</mat-icon>
-      <span>Profile</span>
+      <span>{{ 'Profile' | t }}</span>
     </a>
   } @else {
     <a routerLink="/login" routerLinkActive="active">
       <mat-icon>login</mat-icon>
-      <span>Sign in</span>
+      <span>{{ 'Sign in' | t }}</span>
     </a>
     <a routerLink="/register" routerLinkActive="active">
       <mat-icon>person_add</mat-icon>
-      <span>Join</span>
+      <span>{{ 'Join' | t }}</span>
     </a>
   }
 </nav>

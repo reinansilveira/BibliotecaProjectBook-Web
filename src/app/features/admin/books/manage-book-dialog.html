@@ -1,0 +1,168 @@
+<h2 mat-dialog-title>{{ book().title }}</h2>
+
+<mat-dialog-content>
+  <mat-tab-group>
+    <mat-tab
+      [label]="
+        'Copies ({available}/{total})'
+          | t: { available: book().availableCopies, total: book().totalCopies }
+      "
+    >
+      <div class="tab">
+        <div class="inline-form">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ 'Quantity' | t }}</mat-label>
+            <input
+              matInput
+              type="number"
+              min="1"
+              max="50"
+              [ngModel]="quantity()"
+              (ngModelChange)="quantity.set(+$event)"
+            />
+          </mat-form-field>
+          <button mat-flat-button type="button" [disabled]="busy()" (click)="addCopies()">
+            <mat-icon>add</mat-icon>
+            {{ 'Add copies' | t }}
+          </button>
+        </div>
+
+        @if (copies(); as copies) {
+          <ul class="rows">
+            @for (copy of copies; track copy.id) {
+              <li>
+                <mat-icon>qr_code_2</mat-icon>
+                <span class="grow">
+                  <strong>{{ copy.barcode ?? copy.id.slice(0, 8) }}</strong>
+                  <small>{{ 'Added {date}' | t: { date: copy.addedAt | localDate } }}</small>
+                </span>
+                @if (copy.withdrawnAt) {
+                  <app-loan-status-chip status="Withdrawn" />
+                } @else if (copy.isOnLoan) {
+                  <app-loan-status-chip status="On loan" />
+                } @else {
+                  <app-loan-status-chip status="Available" />
+                  <button mat-button type="button" [disabled]="busy()" (click)="withdraw(copy)">
+                    {{ 'Withdraw' | t }}
+                  </button>
+                }
+              </li>
+            } @empty {
+              <li class="empty">{{ 'No printed copies yet.' | t }}</li>
+            }
+          </ul>
+        } @else {
+          <span class="skeleton rows-skeleton"></span>
+        }
+      </div>
+    </mat-tab>
+
+    <mat-tab [label]="'E-book' | t">
+      <div class="tab">
+        <p class="status-line">
+          <mat-icon>{{ book().hasEbook ? 'check_circle' : 'info' }}</mat-icon>
+          @if (book().hasEbook) {
+            {{
+              '{available} of {total} licenses available'
+                | t: { available: book().availableEbookLicenses, total: book().ebookLicenses }
+            }}
+          } @else {
+            {{ 'This book has no e-book yet.' | t }}
+          }
+        </p>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="licenses">
+          <mat-label>{{ 'Licenses' | t }}</mat-label>
+          <input
+            matInput
+            type="number"
+            min="1"
+            max="100"
+            [ngModel]="licenses()"
+            (ngModelChange)="licenses.set(+$event)"
+          />
+          <mat-hint>{{ 'How many readers can borrow it at the same time.' | t }}</mat-hint>
+        </mat-form-field>
+
+        @if (book().hasEbook) {
+          <button mat-stroked-button type="button" [disabled]="busy()" (click)="saveLicenses()">
+            {{ 'Update licenses' | t }}
+          </button>
+        }
+
+        <section class="source">
+          <h3>{{ 'Upload a file' | t }}</h3>
+          <p class="hint">{{ 'EPUB or PDF.' | t }}</p>
+          <div class="inline-form">
+            <label class="file">
+              <input
+                type="file"
+                accept=".epub,.pdf,application/epub+zip,application/pdf"
+                (change)="pick($event)"
+              />
+              <mat-icon>upload_file</mat-icon>
+              {{ file()?.name ?? ('Choose a file' | t) }}
+            </label>
+            <button mat-flat-button type="button" [disabled]="busy() || !file()" (click)="upload()">
+              {{ 'Upload' | t }}
+            </button>
+          </div>
+        </section>
+
+        <section class="source">
+          <h3>{{ 'Import from Project Gutenberg' | t }}</h3>
+          <p class="hint">
+            {{
+              'Public-domain classics, by their Gutenberg id (for example 84 for Frankenstein).' | t
+            }}
+          </p>
+          <div class="inline-form">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>{{ 'Gutenberg id' | t }}</mat-label>
+              <input
+                matInput
+                type="number"
+                min="1"
+                [ngModel]="gutenbergId()"
+                (ngModelChange)="gutenbergId.set(+$event)"
+              />
+            </mat-form-field>
+            <button mat-flat-button type="button" [disabled]="busy()" (click)="importGutenberg()">
+              {{ 'Import' | t }}
+            </button>
+          </div>
+        </section>
+      </div>
+    </mat-tab>
+
+    <mat-tab [label]="'Waiting list ({count})' | t: { count: book().waitingCount }">
+      <div class="tab">
+        @if (waiting(); as waiting) {
+          <ul class="rows">
+            @for (reservation of waiting; track reservation.id) {
+              <li>
+                <span class="position">{{ reservation.position ?? '–' }}</span>
+                <span class="grow">
+                  <strong>{{ reservation.memberName }}</strong>
+                  <small>
+                    {{ (reservation.format === 'Ebook' ? 'E-book' : 'Print') | t }} ·
+                    {{ 'Joined {date}' | t: { date: reservation.createdAt | localDate } }}
+                  </small>
+                </span>
+                <app-loan-status-chip [status]="reservation.status" />
+              </li>
+            } @empty {
+              <li class="empty">{{ 'Nobody is waiting for this book.' | t }}</li>
+            }
+          </ul>
+        } @else {
+          <span class="skeleton rows-skeleton"></span>
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" [mat-dialog-close]="true">{{ 'Close' | t }}</button>
+</mat-dialog-actions>

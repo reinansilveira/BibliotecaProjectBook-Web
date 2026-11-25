@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { switchMap, tap } from 'rxjs';
+import { map, of, switchMap, tap } from 'rxjs';
 import { CoverService, coverUrl } from '../core/covers/cover.service';
 
 export type CoverDisplay = 'thumb' | 'card' | 'large';
@@ -161,31 +161,37 @@ export class BookCover {
   readonly title = input.required<string>();
   readonly author = input.required<string>();
   readonly display = input<CoverDisplay>('card');
+  readonly coverUrl = input<string | null | undefined>(null);
 
   protected readonly loaded = signal(false);
   protected readonly failed = signal(false);
   protected readonly hue = computed(() => coverHue(this.title()));
 
-  private readonly book = computed(() => ({ title: this.title(), author: this.author() }));
+  private readonly book = computed(() => ({
+    title: this.title(),
+    author: this.author(),
+    coverUrl: this.coverUrl(),
+    size: this.display() === 'thumb' ? ('M' as const) : ('L' as const),
+  }));
 
-  private readonly coverId = toSignal(
+  private readonly source = toSignal(
     toObservable(this.book).pipe(
       tap(() => {
         this.loaded.set(false);
         this.failed.set(false);
       }),
-      switchMap((book) => this.covers.coverId(book.title, book.author)),
+      switchMap((book) => {
+        if (book.coverUrl) {
+          return of(book.coverUrl);
+        }
+
+        return this.covers
+          .coverId(book.title, book.author)
+          .pipe(map((id) => (id === null ? null : coverUrl(id, book.size))));
+      }),
     ),
     { initialValue: null },
   );
 
-  protected readonly imageUrl = computed(() => {
-    const id = this.coverId();
-
-    if (id === null || this.failed()) {
-      return null;
-    }
-
-    return coverUrl(id, this.display() === 'thumb' ? 'M' : 'L');
-  });
+  protected readonly imageUrl = computed(() => (this.failed() ? null : this.source()));
 }

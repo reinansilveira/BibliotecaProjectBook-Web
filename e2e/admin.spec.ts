@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ADMIN, signIn } from './support/api';
+import { ADMIN, expectNewestBook, signIn } from './support/api';
 
 test.describe('Administration', () => {
   test.beforeEach(async ({ page }) => {
@@ -13,14 +13,16 @@ test.describe('Administration', () => {
     await page.getByRole('button', { name: 'Add book' }).click();
 
     const dialog = page.getByRole('dialog');
-    await dialog.getByLabel('Title').fill(title);
-    await dialog.getByLabel('Author').fill('Admin Author');
+    await dialog.getByRole('tab', { name: 'Manually' }).click();
+    const form = dialog.locator('#manual-form');
+    await form.getByLabel('Title').fill(title);
+    await form.getByLabel('Author').fill('Admin Author');
+    await form.getByLabel('Genre').fill('Mystery');
     await dialog.getByRole('button', { name: 'Save' }).click();
 
     await expect(page.getByText(`“${title}” was added to the catalog.`)).toBeVisible();
 
-    await page.goto(`/books?search=${encodeURIComponent(title)}`);
-    await expect(page.locator('app-book-card')).toHaveCount(1);
+    await expectNewestBook(page, title);
   });
 
   test('an admin opens every section', async ({ page }) => {
@@ -29,10 +31,18 @@ test.describe('Administration', () => {
     await expect(page.getByRole('heading', { name: 'Most borrowed' })).toBeVisible();
 
     const sections = page.getByRole('navigation', { name: 'Administration sections' });
+    const paths: Record<string, string> = {
+      Members: 'members',
+      Fines: 'fines',
+      Reports: 'reports',
+      'Audit log': 'audit',
+      Books: 'books',
+      Overview: 'overview',
+    };
 
-    for (const section of ['Members', 'Blacklist', 'Reports', 'Books', 'Overview']) {
+    for (const [section, path] of Object.entries(paths)) {
       await sections.getByRole('link', { name: section }).click();
-      await expect(page).toHaveURL(new RegExp(`/admin/${section.toLowerCase()}`));
+      await expect(page).toHaveURL(new RegExp(`/admin/${path}`));
     }
 
     await sections.getByRole('link', { name: 'Reports' }).click();

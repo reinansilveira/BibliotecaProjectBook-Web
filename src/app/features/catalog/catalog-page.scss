@@ -229,3 +229,137 @@
     gap: 28px 16px;
   }
 }
+
+.genres {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.genre {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 999px;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-label-large);
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+
+  &:hover {
+    background: var(--mat-sys-surface-container);
+  }
+
+  &.selected {
+    background: var(--mat-sys-primary);
+    border-color: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+
+    .genre-count {
+      background: color-mix(in srgb, var(--mat-sys-on-primary) 20%, transparent);
+      color: var(--mat-sys-on-primary);
+    }
+  }
+}
+
+.genre-count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-small);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 12px 16px;
+  margin-bottom: 32px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius);
+  background: var(--mat-sys-surface);
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container);
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-large);
+    cursor: pointer;
+
+    mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+
+    &.selected {
+      background: var(--mat-sys-surface);
+      color: var(--mat-sys-on-surface);
+      box-shadow: var(--app-shadow);
+    }
+  }
+}
+
+.years {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mat-sys-on-surface-variant);
+
+  input {
+    width: 112px;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: 10px;
+    background: var(--mat-sys-surface);
+    color: var(--mat-sys-on-surface);
+    font: var(--mat-sys-body-medium);
+
+    &:focus {
+      outline: 2px solid var(--mat-sys-primary);
+      outline-offset: -1px;
+    }
+  }
+}
+
+.sort {
+  width: 190px;
+}
+
+@media (max-width: 760px) {
+  .filters {
+    padding: 12px;
+  }
+
+  .spacer {
+    display: none;
+  }
+
+  .sort {
+    width: 100%;
+  }
+}

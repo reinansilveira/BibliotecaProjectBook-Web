@@ -7,6 +7,8 @@ import { MatInputModule } from '@angular/material/input';
 import { Router, RouterLink } from '@angular/router';
 import { switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { I18n } from '../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../core/i18n/pipes';
 import { Notifier } from '../../core/notifications/notifier';
 import { AuthShowcase } from './auth-showcase';
 
@@ -20,6 +22,7 @@ import { AuthShowcase } from './auth-showcase';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    TranslatePipe,
   ],
   templateUrl: './register-page.html',
   styleUrl: './auth-card.scss',
@@ -28,6 +31,7 @@ export class RegisterPage {
   private readonly auth = inject(AuthService);
   private readonly notifier = inject(Notifier);
   private readonly router = inject(Router);
+  private readonly i18n = inject(I18n);
 
   protected readonly submitting = signal(false);
   protected readonly revealed = signal(false);
@@ -55,7 +59,9 @@ export class RegisterPage {
       .pipe(switchMap(() => this.auth.login({ email: request.email, password: request.password })))
       .subscribe({
         next: (session) => {
-          this.notifier.success(`Welcome, ${session.name}! Your account is ready.`);
+          this.notifier.success(
+            this.i18n.t('Welcome, {name}! Your account is ready.', { name: session.name }),
+          );
           void this.router.navigate(['/books']);
         },
         error: (error: unknown) => {

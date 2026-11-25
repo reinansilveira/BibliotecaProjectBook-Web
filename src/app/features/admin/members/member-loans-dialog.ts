@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,22 +5,23 @@ import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { switchMap } from 'rxjs';
-import { BooksApi } from '../../../core/api/books-api';
 import { LoansApi } from '../../../core/api/loans-api';
 import { MembersApi } from '../../../core/api/members-api';
-import { Member } from '../../../core/api/models';
+import { Loan, Member } from '../../../core/api/models';
 import { toLoadState } from '../../../core/http/load-state';
+import { I18n } from '../../../core/i18n/i18n.service';
+import { LocalDatePipe, TranslatePipe } from '../../../core/i18n/pipes';
 import { Notifier } from '../../../core/notifications/notifier';
 import { BookCover } from '../../../shared/book-cover';
 import { EmptyState } from '../../../shared/empty-state';
 import { LoanStatusChip } from '../../../shared/loan-status-chip';
-import { LoanWithBook, withBooks } from '../../account/loan-with-book';
 
 @Component({
   selector: 'app-member-loans-dialog',
   imports: [
     BookCover,
-    DatePipe,
+    LocalDatePipe,
+    TranslatePipe,
     EmptyState,
     LoanStatusChip,
     MatButtonModule,
@@ -30,61 +30,62 @@ import { LoanWithBook, withBooks } from '../../account/loan-with-book';
     MatTableModule,
   ],
   template: `
-    <h2 mat-dialog-title>Loans of {{ member.name }}</h2>
+    <h2 mat-dialog-title>{{ 'Loans of {name}' | t: { name: member.name } }}</h2>
     <mat-dialog-content>
       @if (state(); as current) {
         @switch (current.status) {
           @case ('loading') {
-            <mat-progress-bar mode="indeterminate" aria-label="Loading loans" />
+            <mat-progress-bar mode="indeterminate" [attr.aria-label]="'Loading loans' | t" />
           }
           @case ('error') {
-            <app-empty-state icon="cloud_off" title="We could not load the loans">{{
-              current.message
+            <app-empty-state icon="cloud_off" [title]="'We could not load the loans' | t">{{
+              current.message | t
             }}</app-empty-state>
           }
           @case ('loaded') {
             @if (current.value.items.length === 0) {
-              <app-empty-state icon="bookmarks" title="No loans"
-                >This member has not borrowed any book yet.</app-empty-state
-              >
+              <app-empty-state icon="bookmarks" [title]="'No loans' | t">{{
+                'This member has not borrowed any book yet.' | t
+              }}</app-empty-state>
             } @else {
               <table mat-table class="data-table" [dataSource]="current.value.items">
                 <ng-container matColumnDef="book">
-                  <th mat-header-cell *matHeaderCellDef>Book</th>
+                  <th mat-header-cell *matHeaderCellDef>{{ 'Book' | t }}</th>
                   <td mat-cell *matCellDef="let loan">
                     <span class="cell-with-media">
                       <span class="thumb">
                         <app-book-cover
-                          [title]="loan.book.title"
-                          [author]="loan.book.author"
+                          [title]="loan.bookTitle"
+                          [author]="loan.bookAuthor"
+                          [coverUrl]="loan.coverUrl"
                           display="thumb"
                         />
                       </span>
                       <span class="cell-stack">
-                        <strong>{{ loan.book.title }}</strong>
-                        <small>{{ loan.book.author }}</small>
+                        <strong>{{ loan.bookTitle }}</strong>
+                        <small>{{ (loan.format === 'Ebook' ? 'E-book' : 'Print') | t }}</small>
                       </span>
                     </span>
                   </td>
                 </ng-container>
                 <ng-container matColumnDef="dueDate">
-                  <th mat-header-cell *matHeaderCellDef>Due</th>
-                  <td mat-cell *matCellDef="let loan">{{ loan.dueDate | date: 'mediumDate' }}</td>
+                  <th mat-header-cell *matHeaderCellDef>{{ 'Due' | t }}</th>
+                  <td mat-cell *matCellDef="let loan">{{ loan.dueDate | localDate }}</td>
                 </ng-container>
                 <ng-container matColumnDef="status">
-                  <th mat-header-cell *matHeaderCellDef>Status</th>
+                  <th mat-header-cell *matHeaderCellDef>{{ 'Status' | t }}</th>
                   <td mat-cell *matCellDef="let loan">
                     <app-loan-status-chip [status]="loan.status" />
                   </td>
                 </ng-container>
                 <ng-container matColumnDef="actions">
                   <th mat-header-cell *matHeaderCellDef>
-                    <span class="cdk-visually-hidden">Actions</span>
+                    <span class="cdk-visually-hidden">{{ 'Actions' | t }}</span>
                   </th>
                   <td mat-cell *matCellDef="let loan" class="actions-cell">
-                    @if (loan.status !== 'Returned') {
+                    @if (loan.status === 'Active' || loan.status === 'Overdue') {
                       <button mat-stroked-button (click)="registerReturn(loan)">
-                        Register return
+                        {{ 'Register return' | t }}
                       </button>
                     }
                   </td>
@@ -98,15 +99,15 @@ import { LoanWithBook, withBooks } from '../../account/loan-with-book';
       }
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Close</button>
+      <button mat-button mat-dialog-close>{{ 'Close' | t }}</button>
     </mat-dialog-actions>
   `,
 })
 export class MemberLoansDialog {
   private readonly membersApi = inject(MembersApi);
-  private readonly booksApi = inject(BooksApi);
   private readonly loansApi = inject(LoansApi);
   private readonly notifier = inject(Notifier);
+  private readonly i18n = inject(I18n);
 
   protected readonly member = inject<Member>(MAT_DIALOG_DATA);
   protected readonly columns = ['book', 'dueDate', 'status', 'actions'];
@@ -114,21 +115,15 @@ export class MemberLoansDialog {
 
   protected readonly state = toSignal(
     toObservable(this.reload).pipe(
-      switchMap(() =>
-        toLoadState(
-          this.membersApi
-            .loans(this.member.id, 1, 50)
-            .pipe(switchMap((page) => withBooks(page, this.booksApi))),
-        ),
-      ),
+      switchMap(() => toLoadState(this.membersApi.loans(this.member.id, 1, 50))),
     ),
     { initialValue: { status: 'loading' as const } },
   );
 
-  protected registerReturn(loan: LoanWithBook): void {
+  protected registerReturn(loan: Loan): void {
     this.loansApi.return(loan.id).subscribe({
       next: () => {
-        this.notifier.success(`“${loan.book.title}” was returned.`);
+        this.notifier.success(this.i18n.t('“{title}” was returned.', { title: loan.bookTitle }));
         this.reload.update((value) => value + 1);
       },
       error: (error: unknown) => this.notifier.error(error),

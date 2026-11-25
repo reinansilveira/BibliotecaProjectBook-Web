@@ -17,18 +17,40 @@ export function newMember(): TestMember {
   return { name: `E2E Reader ${id}`, email: `e2e-${id}@tests.com`, password: 'Password@123' };
 }
 
-export async function adminToken(request: APIRequestContext): Promise<string> {
-  const response = await request.post('/api/auth/login', { data: ADMIN });
-  expect(response.ok()).toBeTruthy();
+let cachedAdminToken: Promise<string> | null = null;
+
+async function requestAdminToken(request: APIRequestContext): Promise<string> {
+  const response = await request.post('/api/v1/auth/login', { data: ADMIN });
+  expect(response.ok(), `admin sign-in failed with ${response.status()}`).toBeTruthy();
 
   return (await response.json()).accessToken as string;
 }
 
+export function adminToken(request: APIRequestContext): Promise<string> {
+  cachedAdminToken ??= requestAdminToken(request).catch((error: unknown) => {
+    cachedAdminToken = null;
+    throw error;
+  });
+
+  return cachedAdminToken;
+}
+
+export async function expectNewestBook(page: Page, title: string): Promise<void> {
+  await page.goto('/books?sort=Newest');
+  await expect(page.locator('app-book-card a').first()).toHaveAttribute('aria-label', title);
+}
+
 export async function createBook(request: APIRequestContext, title: string): Promise<string> {
   const token = await adminToken(request);
-  const response = await request.post('/api/books', {
+  const response = await request.post('/api/v1/books', {
     headers: { Authorization: `Bearer ${token}` },
-    data: { title, author: 'E2E Author', description: 'Created by the end-to-end tests.' },
+    data: {
+      title,
+      author: 'E2E Author',
+      description: 'Created by the end-to-end tests.',
+      genre: 'Mystery',
+      copies: 1,
+    },
   });
   expect(response.ok()).toBeTruthy();
 

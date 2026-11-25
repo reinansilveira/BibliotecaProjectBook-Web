@@ -17,7 +17,10 @@ describe('CatalogPage', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        { provide: BooksApi, useValue: { list } },
+        {
+          provide: BooksApi,
+          useValue: { list, genres: () => of([{ name: 'Romance', books: 3 }]) },
+        },
         {
           provide: AuthService,
           useValue: { isAuthenticated: computed(() => session() !== null) },

@@ -1,5 +1,10 @@
 import { aLoan } from '../../../testing/test-data';
-import { days, loanProgress } from './loan-progress';
+import { interpolate } from '../../core/i18n/i18n.service';
+import { LoanProgress, loanProgress } from './loan-progress';
+
+function describe_(progress: LoanProgress): string {
+  return interpolate(progress.label, { count: progress.count });
+}
 
 describe('loanProgress', () => {
   const loan = aLoan({ loanDate: '2026-03-01T12:00:00Z', dueDate: '2026-03-08T12:00:00Z' });
@@ -7,34 +12,32 @@ describe('loanProgress', () => {
   it('counts the days left and how much of the loan has passed', () => {
     const progress = loanProgress(loan, Date.parse('2026-03-04T12:00:00Z'));
 
-    expect(progress.label).toBe('4 days left');
+    expect(describe_(progress)).toBe('4 days left');
     expect(progress.tone).toBe('ok');
     expect(progress.percent).toBeCloseTo(42.86, 1);
   });
 
   it('warns when the return date is close', () => {
-    expect(loanProgress(loan, Date.parse('2026-03-07T12:00:00Z'))).toMatchObject({
-      label: '1 day left',
-      tone: 'soon',
-    });
-    expect(loanProgress(loan, Date.parse('2026-03-08T12:00:00Z')).label).toBe('Due today');
+    const tomorrow = loanProgress(loan, Date.parse('2026-03-07T12:00:00Z'));
+
+    expect(describe_(tomorrow)).toBe('1 day left');
+    expect(tomorrow.tone).toBe('soon');
+    expect(describe_(loanProgress(loan, Date.parse('2026-03-08T12:00:00Z')))).toBe('Due today');
   });
 
   it('counts the days overdue', () => {
-    const progress = loanProgress(
-      aLoan({ ...loan, status: 'Overdue' }),
-      Date.parse('2026-03-10T12:00:00Z'),
-    );
+    const overdue = aLoan({ ...loan, status: 'Overdue' });
 
-    expect(progress).toEqual({ percent: 100, label: '2 days overdue', tone: 'late' });
+    expect(describe_(loanProgress(overdue, Date.parse('2026-03-10T12:00:00Z')))).toBe(
+      '2 days overdue',
+    );
+    expect(describe_(loanProgress(overdue, Date.parse('2026-03-09T12:00:00Z')))).toBe(
+      '1 day overdue',
+    );
+    expect(loanProgress(overdue).tone).toBe('late');
   });
 
   it('marks returned loans as done', () => {
     expect(loanProgress(aLoan({ status: 'Returned' })).tone).toBe('done');
-  });
-
-  it('writes singular and plural days', () => {
-    expect(days(1)).toBe('1 day');
-    expect(days(3)).toBe('3 days');
   });
 });

@@ -1,11 +1,21 @@
-@if (query().search; as search) {
+@if (filtered()) {
   <section class="results-header">
     <div class="results-content">
-      <span class="eyebrow">Search</span>
-      <h1 class="page-title">Results for “{{ search }}”</h1>
+      <span class="eyebrow">{{ 'Search' | t }}</span>
+      <h1 class="page-title">
+        @if (query().search; as search) {
+          {{ 'Results for “{search}”' | t: { search } }}
+        } @else if (query().genre; as genre) {
+          {{ genre | t }}
+        } @else if (query().author; as author) {
+          {{ 'Books by {author}' | t: { author } }}
+        } @else {
+          {{ 'Filtered books' | t }}
+        }
+      </h1>
       <a class="clear" routerLink="/books">
         <mat-icon>close</mat-icon>
-        Clear search
+        {{ 'Clear search' | t }}
       </a>
     </div>
   </section>
@@ -13,33 +23,35 @@
   <section class="hero">
     <div class="hero-content">
       <div class="hero-copy">
-        <span class="eyebrow">The reading room</span>
-        <h1>Find your next great read</h1>
+        <span class="eyebrow">{{ 'The reading room' | t }}</span>
+        <h1>{{ 'Find your next great read' | t }}</h1>
         <p>
-          Browse the catalog, borrow any book for seven days and keep track of everything you are
-          reading, all in one place.
+          {{
+            'Borrow printed books or read e-books right in your browser, join waiting lists and keep track of everything you are reading.'
+              | t
+          }}
         </p>
         <div class="hero-actions">
           <a mat-flat-button href="#catalog" (click)="scrollToCatalog($event)">
             <mat-icon>explore</mat-icon>
-            Browse the catalog
+            {{ 'Browse the catalog' | t }}
           </a>
           @if (!auth.isAuthenticated()) {
-            <a mat-stroked-button routerLink="/register">Join for free</a>
+            <a mat-stroked-button routerLink="/register">{{ 'Join for free' | t }}</a>
           }
         </div>
         <dl class="stats">
           <div>
-            <dt>Books</dt>
-            <dd>{{ totalBooks() ?? '—' }}</dd>
+            <dt>{{ 'Books' | t }}</dt>
+            <dd>{{ totalBooks() || '—' }}</dd>
           </div>
           <div>
-            <dt>Loan period</dt>
-            <dd>7 days</dd>
+            <dt>{{ 'Genres' | t }}</dt>
+            <dd>{{ genres().length || '—' }}</dd>
           </div>
           <div>
-            <dt>Price</dt>
-            <dd>Free</dd>
+            <dt>{{ 'Price' | t }}</dt>
+            <dd>{{ 'Free' | t }}</dd>
           </div>
         </dl>
       </div>
@@ -47,7 +59,11 @@
       <div class="hero-shelf" aria-hidden="true">
         @for (item of featured(); track item.book.id) {
           <div class="fan-item" [style.--offset]="item.offset" [style.--distance]="item.distance">
-            <app-book-cover [title]="item.book.title" [author]="item.book.author" />
+            <app-book-cover
+              [title]="item.book.title"
+              [author]="item.book.author"
+              [coverUrl]="item.book.coverUrl"
+            />
           </div>
         } @empty {
           @for (item of fanPlaceholders; track item.offset) {
@@ -62,13 +78,102 @@
 }
 
 <section class="page" id="catalog">
+  @if (genres().length > 0) {
+    <nav class="genres" [attr.aria-label]="'Genres' | t">
+      <button
+        type="button"
+        class="genre"
+        [class.selected]="!query().genre"
+        (click)="applyFilters({ genre: null })"
+      >
+        {{ 'All genres' | t }}
+      </button>
+      @for (genre of genres(); track genre.name) {
+        <button
+          type="button"
+          class="genre"
+          [class.selected]="query().genre === genre.name"
+          [attr.aria-pressed]="query().genre === genre.name"
+          (click)="applyFilters({ genre: genre.name })"
+        >
+          {{ genre.name | t }}
+          <span class="genre-count">{{ genre.books }}</span>
+        </button>
+      }
+    </nav>
+  }
+
+  <div class="filters">
+    <div class="segmented" role="group" [attr.aria-label]="'Format' | t">
+      <button
+        type="button"
+        [class.selected]="!query().format"
+        (click)="applyFilters({ format: null })"
+      >
+        {{ 'All formats' | t }}
+      </button>
+      <button
+        type="button"
+        [class.selected]="query().format === 'Print'"
+        (click)="applyFilters({ format: 'Print' })"
+      >
+        <mat-icon>menu_book</mat-icon>{{ 'Print' | t }}
+      </button>
+      <button
+        type="button"
+        [class.selected]="query().format === 'Ebook'"
+        (click)="applyFilters({ format: 'Ebook' })"
+      >
+        <mat-icon>tablet_mac</mat-icon>{{ 'E-book' | t }}
+      </button>
+    </div>
+
+    <mat-slide-toggle
+      [checked]="query().availableOnly === true"
+      (change)="applyFilters({ available: $event.checked ? 'true' : null })"
+    >
+      {{ 'Available now' | t }}
+    </mat-slide-toggle>
+
+    <div class="years">
+      <input
+        type="number"
+        inputmode="numeric"
+        [placeholder]="'From year' | t"
+        [attr.aria-label]="'From year' | t"
+        [value]="query().yearFrom ?? ''"
+        (change)="setYear('yearFrom', $any($event.target).value)"
+      />
+      <span aria-hidden="true">–</span>
+      <input
+        type="number"
+        inputmode="numeric"
+        [placeholder]="'To year' | t"
+        [attr.aria-label]="'To year' | t"
+        [value]="query().yearTo ?? ''"
+        (change)="setYear('yearTo', $any($event.target).value)"
+      />
+    </div>
+
+    <span class="spacer"></span>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="sort">
+      <mat-label>{{ 'Sort by' | t }}</mat-label>
+      <mat-select
+        [value]="query().sort ?? 'Title'"
+        (selectionChange)="applyFilters({ sort: $event.value === 'Title' ? null : $event.value })"
+      >
+        @for (option of sorts; track option.value) {
+          <mat-option [value]="option.value">{{ option.label | t }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
   @if (state(); as current) {
     @switch (current.status) {
       @case ('loading') {
-        <div class="section-header">
-          <span class="skeleton heading-skeleton"></span>
-        </div>
-        <div class="grid" aria-busy="true" aria-label="Loading books">
+        <div class="grid" aria-busy="true" [attr.aria-label]="'Loading books' | t">
           @for (placeholder of skeletons; track placeholder) {
             <div class="card-skeleton">
               <span class="skeleton cover-skeleton"></span>
@@ -79,20 +184,24 @@
         </div>
       }
       @case ('error') {
-        <app-empty-state icon="cloud_off" title="We could not load the catalog">
-          {{ current.message }}
+        <app-empty-state icon="cloud_off" [title]="'We could not load the catalog' | t">
+          {{ current.message | t }}
         </app-empty-state>
       }
       @case ('loaded') {
         @if (current.value.items.length === 0) {
-          <app-empty-state icon="search_off" title="No books found">
-            Try another title or author.
-            <a mat-stroked-button routerLink="/books">See all books</a>
+          <app-empty-state icon="search_off" [title]="'No books found' | t">
+            {{ 'Try another title, author or filter.' | t }}
+            <a mat-stroked-button routerLink="/books">{{ 'See all books' | t }}</a>
           </app-empty-state>
         } @else {
           <div class="section-header">
-            <h2 class="section-title">{{ query().search ? 'Matching books' : 'All books' }}</h2>
-            <span class="count">{{ current.value.totalItems }} books</span>
+            <h2 class="section-title">
+              {{ (filtered() ? 'Matching books' : 'All books') | t }}
+            </h2>
+            <span class="count">{{
+              i18n.plural(current.value.totalItems, '{count} book', '{count} books')
+            }}</span>
           </div>
           <div class="grid">
             @for (book of current.value.items; track book.id) {
@@ -106,7 +215,7 @@
               [pageSize]="pageSize"
               [hidePageSize]="true"
               (page)="changePage($event)"
-              aria-label="Catalog pages"
+              [attr.aria-label]="'Catalog pages' | t"
             />
           }
         }

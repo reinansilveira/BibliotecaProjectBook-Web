@@ -2,7 +2,7 @@
   @switch (current.status) {
     @case ('loading') {
       <section class="page">
-        <div class="detail" aria-busy="true" aria-label="Loading book">
+        <div class="detail" aria-busy="true" [attr.aria-label]="'Loading book' | t">
           <span class="skeleton cover-skeleton"></span>
           <div class="info">
             <span class="skeleton line title-line"></span>
@@ -14,105 +14,227 @@
     }
     @case ('error') {
       <section class="page">
-        <app-empty-state icon="menu_book" title="Book unavailable">
-          {{ current.message }}
-          <a mat-stroked-button routerLink="/books">Back to the catalog</a>
+        <app-empty-state icon="menu_book" [title]="'Book unavailable' | t">
+          {{ current.message | t }}
+          <a mat-stroked-button routerLink="/books">{{ 'Back to the catalog' | t }}</a>
         </app-empty-state>
       </section>
     }
     @case ('loaded') {
+      @let book = current.value;
       <section class="hero">
         <div class="backdrop" aria-hidden="true">
           <app-book-cover
-            [title]="current.value.title"
-            [author]="current.value.author"
+            [title]="book.title"
+            [author]="book.author"
+            [coverUrl]="book.coverUrl"
             display="large"
           />
         </div>
 
         <div class="page hero-page">
-          <nav class="breadcrumb" aria-label="Breadcrumb">
-            <a routerLink="/books">Discover</a>
+          <nav class="breadcrumb" [attr.aria-label]="'Breadcrumb' | t">
+            <a routerLink="/books">{{ 'Discover' | t }}</a>
             <mat-icon>chevron_right</mat-icon>
-            <span aria-current="page">{{ current.value.title }}</span>
+            <a routerLink="/books" [queryParams]="{ genre: book.genre }">{{ book.genre | t }}</a>
+            <mat-icon>chevron_right</mat-icon>
+            <span aria-current="page">{{ book.title }}</span>
           </nav>
 
           <article class="detail">
             <div class="cover">
               <app-book-cover
-                [title]="current.value.title"
-                [author]="current.value.author"
+                [title]="book.title"
+                [author]="book.author"
+                [coverUrl]="book.coverUrl"
                 display="large"
               />
             </div>
 
             <div class="info">
-              <h1>{{ current.value.title }}</h1>
-              <p class="author">
-                by
-                <a routerLink="/books" [queryParams]="{ search: current.value.author }">{{
-                  current.value.author
-                }}</a>
-              </p>
-
-              <div class="loan-card">
-                <ul class="facts">
-                  <li>
-                    <mat-icon>event_available</mat-icon>
-                    <span><strong>7 days</strong> loan period</span>
-                  </li>
-                  <li>
-                    <mat-icon>bookmark_added</mat-icon>
-                    <span><strong>1 book</strong> at a time</span>
-                  </li>
-                  <li>
-                    <mat-icon>volunteer_activism</mat-icon>
-                    <span><strong>Free</strong> for members</span>
-                  </li>
-                </ul>
-
+              <div class="title-row">
+                <h1>{{ book.title }}</h1>
                 @if (auth.isAuthenticated()) {
                   <button
-                    mat-flat-button
-                    class="borrow"
-                    [disabled]="borrowing()"
-                    (click)="borrow()"
+                    mat-icon-button
+                    type="button"
+                    class="heart"
+                    [class.on]="wishlist.has(book.id)"
+                    [attr.aria-pressed]="wishlist.has(book.id)"
+                    [attr.aria-label]="
+                      (wishlist.has(book.id) ? 'Remove from wishlist' : 'Add to wishlist') | t
+                    "
+                    [matTooltip]="
+                      (wishlist.has(book.id) ? 'Remove from wishlist' : 'Add to wishlist') | t
+                    "
+                    (click)="toggleWishlist(book)"
                   >
-                    <mat-icon>library_add</mat-icon>
-                    Borrow this book
+                    <mat-icon>favorite</mat-icon>
                   </button>
-                } @else {
-                  <a
-                    mat-flat-button
-                    class="borrow"
-                    routerLink="/login"
-                    [queryParams]="{ returnUrl: returnUrl() }"
-                  >
-                    <mat-icon>login</mat-icon>
-                    Sign in to borrow
+                }
+              </div>
+              <p class="author">
+                {{ 'by' | t }}
+                <a routerLink="/books" [queryParams]="{ author: book.author }">{{ book.author }}</a>
+              </p>
+
+              <div class="meta">
+                @if (book.ratingsCount > 0) {
+                  <a class="rating-link" href="#reviews">
+                    <app-star-rating [rating]="book.averageRating" [count]="book.ratingsCount" />
                   </a>
+                } @else {
+                  <span class="muted">{{ 'No ratings yet' | t }}</span>
+                }
+                <a class="chip" routerLink="/books" [queryParams]="{ genre: book.genre }">{{
+                  book.genre | t
+                }}</a>
+                @if (book.publishedYear) {
+                  <span class="chip plain">{{ book.publishedYear }}</span>
+                }
+                @if (book.isbn) {
+                  <span class="chip plain">ISBN {{ book.isbn }}</span>
                 }
               </div>
 
-              <h2 class="section-title">About this book</h2>
+              @if (standing(); as standing) {
+                @if (!standing.canBorrow) {
+                  <div class="standing" role="status">
+                    <mat-icon>block</mat-icon>
+                    <div>
+                      <strong>{{ 'You cannot borrow right now' | t }}</strong>
+                      @for (reason of standing.reasons; track reason) {
+                        <span>{{ reason | t }}</span>
+                      }
+                    </div>
+                    <a mat-button routerLink="/account/fines">{{ 'See my account' | t }}</a>
+                  </div>
+                }
+              }
+
+              <div class="formats">
+                @for (option of options(); track option.format) {
+                  <div class="format" [class.unavailable]="option.action === 'unavailable'">
+                    <div class="format-head">
+                      <mat-icon>{{
+                        option.format === 'Print' ? 'menu_book' : 'tablet_mac'
+                      }}</mat-icon>
+                      <div>
+                        <strong>{{
+                          (option.format === 'Print' ? 'Printed copy' : 'E-book') | t
+                        }}</strong>
+                        <span class="format-count">
+                          @if (option.total > 0) {
+                            {{
+                              '{available} of {total} available'
+                                | t: { available: option.available, total: option.total }
+                            }}
+                          } @else {
+                            {{ 'Not offered in this format' | t }}
+                          }
+                        </span>
+                      </div>
+                    </div>
+                    <span class="format-terms">
+                      {{
+                        (option.format === 'Print'
+                          ? '7 days, renewable once'
+                          : 'Read in the browser for 14 days'
+                        ) | t
+                      }}
+                    </span>
+
+                    @if (!auth.isAuthenticated()) {
+                      @if (option.action !== 'unavailable') {
+                        <a
+                          mat-stroked-button
+                          routerLink="/login"
+                          [queryParams]="{ returnUrl: returnUrl() }"
+                        >
+                          {{ 'Sign in to borrow' | t }}
+                        </a>
+                      }
+                    } @else {
+                      @switch (option.action) {
+                        @case ('borrow') {
+                          <button
+                            mat-flat-button
+                            [disabled]="busy()"
+                            (click)="borrow(option.format)"
+                          >
+                            <mat-icon>library_add</mat-icon>
+                            {{
+                              (option.format === 'Print' ? 'Borrow print copy' : 'Borrow e-book')
+                                | t
+                            }}
+                          </button>
+                        }
+                        @case ('reserve') {
+                          <button
+                            mat-stroked-button
+                            [disabled]="busy()"
+                            (click)="reserve(option.format)"
+                          >
+                            <mat-icon>hourglass_top</mat-icon>
+                            {{ 'Join the waiting list' | t }}
+                          </button>
+                        }
+                      }
+                    }
+                  </div>
+                }
+              </div>
+
+              @if (book.waitingCount > 0) {
+                <p class="waiting">
+                  <mat-icon>groups</mat-icon>
+                  {{
+                    i18n.plural(
+                      book.waitingCount,
+                      '{count} reader is waiting for this book',
+                      '{count} readers are waiting for this book'
+                    )
+                  }}
+                </p>
+              }
+
+              <h2 class="section-title">{{ 'About this book' | t }}</h2>
               <p class="description">
-                {{ current.value.description || 'No description available yet.' }}
+                {{ book.description || ('No description available yet.' | t) }}
               </p>
               <p class="added">
                 <mat-icon>schedule</mat-icon>
-                Added to the catalog on {{ current.value.createdAt | date: 'longDate' }}
+                {{
+                  'Added to the catalog on {date}'
+                    | t: { date: book.createdAt | localDate: 'longDate' }
+                }}
               </p>
             </div>
           </article>
         </div>
       </section>
 
+      @if (alsoRead().length > 0) {
+        <section class="page more">
+          <h2 class="section-title">{{ 'Readers also read' | t }}</h2>
+          <div class="shelf">
+            @for (item of alsoRead(); track item.id) {
+              <app-book-card [book]="item" />
+            }
+          </div>
+        </section>
+      }
+
+      <section class="page reviews-section" id="reviews">
+        <app-book-reviews [book]="book" (changed)="refreshBook()" />
+      </section>
+
       @if (moreByAuthor().length > 0) {
         <section class="page more">
-          <h2 class="section-title">More by {{ current.value.author }}</h2>
+          <h2 class="section-title">{{ 'More by {author}' | t: { author: book.author } }}</h2>
           <div class="shelf">
-            @for (book of moreByAuthor(); track book.id) {
-              <app-book-card [book]="book" />
+            @for (item of moreByAuthor(); track item.id) {
+              <app-book-card [book]="item" />
             }
           </div>
         </section>

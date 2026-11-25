@@ -111,3 +111,9 @@ mat-form-field mat-icon[matPrefix] {
     gap: 4px;
   }
 }
+
+.forgot {
+  justify-self: end;
+  margin: -4px 0 4px;
+  font: var(--mat-sys-label-large);
+}
