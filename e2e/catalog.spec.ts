@@ -33,11 +33,11 @@ test.describe('Catalog', () => {
     await page.getByRole('button', { name: /^Gothic/ }).click();
     await page
       .getByRole('group', { name: 'Format' })
-      .getByRole('button', { name: 'E-book' })
+      .getByRole('button', { name: 'Print' })
       .click();
 
     await expect(page).toHaveURL(/genre=Gothic/);
-    await expect(page).toHaveURL(/format=Ebook/);
+    await expect(page).toHaveURL(/format=Print/);
     await expect(page.getByRole('heading', { name: 'Gothic', level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Dracula', exact: true })).toBeVisible();
   });

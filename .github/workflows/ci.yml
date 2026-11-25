@@ -67,10 +67,23 @@ jobs:
         working-directory: api
         env:
           AUTH_RATE_LIMIT: 100000
+          DEMO_EBOOKS: 'false'
         run: |
           docker compose up -d --build
           for attempt in $(seq 1 60); do
             curl -sf http://localhost:5080/health && exit 0
+            sleep 5
+          done
+          docker compose logs api
+          exit 1
+
+      - name: Wait for the demo catalog and its search index
+        working-directory: api
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl -sf "http://localhost:5080/api/v1/books?search=Dracula&page=1&pageSize=1" | grep -q '"totalItems":[1-9]'; then
+              exit 0
+            fi
             sleep 5
           done
           docker compose logs api
